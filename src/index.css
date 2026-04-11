@@ -1,0 +1,566 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   브랜드 디자인 토큰 — yongchang.co.kr 기준
+   Primary  : #000081  (딥 네이비)
+   Accent   : #00b4d6  (시안 블루)
+   Dark     : #222     (헤더 유틸리티/푸터 BG)
+═══════════════════════════════════════════ */
+
+/* Tailwind v4 테마 토큰 — bg-primary, text-accent 등 유틸리티로 사용 */
+@theme {
+  --color-primary:       #000081;
+  --color-primary-light: #162da1;
+  --color-primary-dark:  #031053;
+  --color-accent:        #00b4d6;
+  --color-accent-hover:  #0097b8;
+  --color-surface:       #f3f7fa;
+  --color-dark-bg:       #222222;
+  --color-body-text:     #222222;
+  --color-muted:         #666666;
+  --color-border:        #e5e5e5;
+
+  /* ── 10px 기반(html 62.5%) 하에서 Tailwind 유틸리티를 기존 px 값으로 유지 ──
+     --spacing: 0.4rem  →  h-10 = 4rem = 40px, p-4 = 1.6rem = 16px  (동일)    */
+  --spacing: 0.4rem;
+
+  /* text 유틸리티도 기존 px 값 유지 (×1.6) */
+  --text-xs:   1.2rem;     /* 12px */
+  --text-sm:   1.4rem;     /* 14px */
+  --text-base: 1.6rem;     /* 16px */
+  --text-lg:   1.8rem;     /* 18px */
+  --text-xl:   2rem;       /* 20px */
+  --text-2xl:  2.4rem;     /* 24px */
+  --text-3xl:  3rem;       /* 30px */
+  --text-5xl:  4.8rem;     /* 48px */
+}
+
+/* 비-Tailwind 커스텀 변수는 :root 에 직접 선언 */
+:root {
+  --font-yc: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   Base Layer
+═══════════════════════════════════════════ */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 62.5%;               /* 1rem = 10px (yc2025 기준 — rem 계산 단순화) */
+    -webkit-text-size-adjust: 100%;
+    min-height: 100%;
+    min-height: 100dvh;
+  }
+
+  body {
+    font-family: var(--font-yc);
+    font-size: 1.6rem;              /* 16px */
+    line-height: 1.7;
+    color: #222;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    min-height: 100%;
+    min-height: 100dvh;
+  }
+
+  #root {
+    min-height: 100%;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-yc);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    color: #000081;
+    margin: 0;
+  }
+
+  p { line-height: 1.75; margin: 0; }
+
+  a { color: inherit; text-decoration: none; }
+
+  img { max-width: 100%; display: block; }
+
+  ul, ol, li { list-style: none; margin: 0; padding: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   Components Layer  — @apply 완전 제거, 순수 CSS
+═══════════════════════════════════════════ */
+/* 메인 히어로: 한 화면 풀뷰 (모바일 주소창 대응 — yongchang.co.kr 류) */
+.hero-viewport-fill {
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+@layer components {
+
+  /* 제품 상세 특징 목록 — 전역 ul/li 리셋(list-style: none) 무시 */
+  .product-feature-bullets ul {
+    list-style-type: disc;
+    list-style-position: outside;
+    margin: 0;
+    padding-left: 1.35em;
+  }
+  .product-feature-bullets li {
+    display: list-item;
+    list-style-type: disc;
+    list-style-position: outside;
+    margin: 0 0 0.45rem 0;
+    padding: 0;
+  }
+
+  /* ── 컨테이너 ── */
+  .container-yc,
+  .section-inner {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  /* ── 문의 페이지 레이아웃 ── */
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5rem;
+  }
+  @media (min-width: 1024px) {
+    .contact-layout {
+      grid-template-columns: 380px 1fr;
+    }
+  }
+
+  /* ── 문의폼 이름/연락처 그리드 ── */
+  .contact-name-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  @media (min-width: 640px) {
+    .contact-name-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* ── 문의 폼 인풋 공통 ── */
+  .contact-input {
+    width: 100%;
+    padding: 1.1rem 1.4rem;
+    font-size: 1.4rem;
+    color: #222;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0.4rem;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    appearance: auto;
+  }
+  .contact-input:focus {
+    border-color: #000081;
+  }
+  .contact-input::placeholder { color: #aaa; }
+  .contact-textarea {
+    resize: vertical;
+    min-height: 18rem;
+    line-height: 1.7;
+  }
+
+  /* ── 타이포그래피 헬퍼 ── */
+  .title-display {
+    font-family: var(--font-yc);
+    font-size: clamp(2rem, 5vw, 3.75rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+    color: #000081;
+  }
+
+  .title-section {
+    font-family: var(--font-yc);
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    color: #000081;
+  }
+
+  .title-sub {
+    font-family: var(--font-yc);
+    font-size: clamp(1.125rem, 2vw, 1.5rem);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.025em;
+    color: #000081;
+  }
+
+  .section-title {
+    font-family: var(--font-yc);
+    font-size: clamp(1.375rem, 2.5vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    color: #000081;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-sub {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: #666;
+    letter-spacing: -0.01em;
+  }
+
+  .text-body-lg {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: #444;
+  }
+
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #555;
+  }
+
+  .text-caption {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #777;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── 구분선 ── */
+  .divider {
+    width: 2.5rem;
+    height: 0.25rem;
+    background: #00b4d6;
+    border-radius: 9999px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ════════════════════════════════════
+     버튼 — yongchang.co.kr btn-type-* 기준
+     • 완전 라운드(border-radius:9999px)
+     • Primary hover: opacity 0.8 + box-shadow
+  ════════════════════════════════════ */
+
+  /* ─ 기본 베이스 ─ */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    border: 1px solid transparent;
+    transition: opacity 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid #000081; outline-offset: 2px; }
+
+  /* ─ Primary (#000081 채움 — btn-type-b) ─ */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    background-color: #000081;
+    color: #fff;
+    border: 1px solid #000081;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn-primary:hover {
+    opacity: 0.8;
+    box-shadow: 0 0 4px rgba(0, 0, 129, 0.4);
+  }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary:focus-visible { outline: 2px solid #000081; outline-offset: 2px; }
+
+  /* ─ Accent (#00b4d6 채움) ─ */
+  .btn-accent {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    background-color: #00b4d6;
+    color: #fff;
+    border: 1px solid #00b4d6;
+    transition: background-color 0.2s, border-color 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn-accent:hover {
+    background-color: #0097b8;
+    border-color: #0097b8;
+  }
+  .btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ─ Secondary (아웃라인) ─ */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    background-color: #fff;
+    color: #000081;
+    border: 1px solid #000081;
+    transition: background-color 0.2s, color 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover {
+    background-color: #000081;
+    color: #fff;
+  }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ─ Ghost ─ */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    background-color: transparent;
+    color: #555;
+    border: 1px solid #e5e5e5;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn-ghost:hover {
+    background-color: #f3f7fa;
+    color: #000081;
+    border-color: #000081;
+  }
+
+  /* ─ Danger ─ */
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    padding: 0.75rem 2rem;
+    background-color: #e53e3e;
+    color: #fff;
+    border: 1px solid #e53e3e;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .btn-danger:hover { background-color: #c53030; }
+
+  /* ─ 크기 수정자 ─ */
+  .btn-sm { padding: 0.8rem 2.5rem; font-size: 1.4rem; }
+  .btn-lg { padding: 1.6rem 4rem;   font-size: 1.6rem; }
+
+  /* ─ Detail 버튼 (a.btn-detail 재현) ─ */
+  .btn-detail {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    cursor: pointer;
+    font-family: var(--font-yc);
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    border-radius: 9999px;
+    width: 19.8rem;
+    height: 6.1rem;
+    background-color: #222;
+    color: #fff;
+    border: none;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+  }
+  .btn-detail:hover { opacity: 0.8; box-shadow: 0 0 4px rgba(44,44,44,0.5); }
+  .btn-detail.white { background-color: transparent; border: 1px solid #fff; color: #fff; }
+  .btn-detail.white:hover { opacity: 0.9; box-shadow: 0 0 4px #e6e6e6; }
+
+  /* ─ Page-move 링크 (a.btn-page-move 재현) ─ */
+  .btn-page-move {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.8rem;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn-page-move span {
+    font-family: var(--font-yc);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    letter-spacing: -0.02em;
+    transition: color 0.2s;
+  }
+  .btn-page-move.white span { color: #fff; }
+  .btn-page-move i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 0;
+    color: #222;
+    transition: color 0.2s, transform 0.3s;
+  }
+  .btn-page-move i svg,
+  .btn-page-move i img {
+    height: 0.72em;
+    width: auto;
+    display: block;
+  }
+  .btn-page-move.white i { color: #fff; }
+  .btn-page-move:hover i { color: #00b4d6; transform: translateX(4px); }
+  .btn-page-move:hover span { color: #00b4d6; }
+  .btn-page-move.white:hover i { color: #00b4d6; }
+  .btn-page-move.white:hover span { color: #00b4d6; }
+
+  /* ── 폼 ── */
+  .input {
+    display: block;
+    width: 100%;
+    border-radius: 0.4rem;
+    border: 1px solid #ddd;
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    font-family: var(--font-yc);
+    color: #222;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+  .input::placeholder { color: #aaa; font-size: 0.9375rem; }
+  .input:focus {
+    outline: none;
+    border-color: #000081;
+    box-shadow: 0 0 0 3px rgba(0,0,129,0.12);
+  }
+  .input-error { border-color: #e53e3e; }
+  .input-error:focus {
+    border-color: #e53e3e;
+    box-shadow: 0 0 0 3px rgba(229,62,62,0.15);
+  }
+
+  .label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── 카드 ── */
+  .card {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-hover {
+    background: #fff;
+    border-radius: 1rem;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.25s, transform 0.25s;
+  }
+  .card-hover:hover {
+    box-shadow: 0 8px 24px rgba(0,0,129,0.10);
+    transform: translateY(-2px);
+  }
+
+  /* ── 배지 ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .badge-navy  { background: rgba(0,0,129,0.08); color: #000081; }
+  .badge-blue  { background: rgba(0,180,214,0.10); color: #0097b8; }
+  .badge-green { background: #ecfdf5; color: #059669; }
+  .badge-red   { background: #fff5f5; color: #e53e3e; }
+  .badge-gray  { background: #f3f7fa; color: #555; }
+
+}
