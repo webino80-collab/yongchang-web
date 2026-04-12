@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, type PointerEvent } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useLangStore } from "@/store/useLangStore";
 import { t, tr, type Lang } from "@/i18n/translations";
@@ -16,6 +16,15 @@ const ACCENT  = "#00b4d6";
 /** 메인 히어로: 이미지 4슬롯 + 하단 타임라인 진행 */
 const HERO_TIMELINE_SLOTS = 4;
 const HERO_AUTO_MS = 8000;
+/** setState 과다 방지 — 진행률이 이 정도 이상 변할 때만 리렌더 */
+const HERO_PROGRESS_EPS = 0.004;
+/** 히어로 배경 크로스페이드 (초) */
+const HERO_BG_FADE_SEC = 0.55;
+const HERO_MOTION_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+/** 히어로 아래 롤링: 모바일 스와이프 최소 거리(px), 세로 스크롤과 구분 비율 */
+const ROLLING_SWIPE_MIN_PX = 50;
+const ROLLING_SWIPE_DOMINANCE = 1.15;
 
 /** Layout 고정 헤더와 맞춤 — 본문이 헤더 아래·타임라인 위 구간 안에 오도록 (+3rem ≈ 30px 아래로) */
 const HERO_PAD_TOP_PC =
@@ -185,15 +194,9 @@ function ProductCard({
 ════════════════════════════════════════ */
 function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
   const [idx, setIdx] = useState(0);
+  const [pointerDown, setPointerDown] = useState(false);
   const { isMobile } = useBreakpoint();
-
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    const t = setInterval(() => {
-      setIdx((p) => (p + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(t);
-  }, [slides.length]);
+  const dragStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
 
   const slideKey = slides.map((s) => s.id).join("|");
   useEffect(() => {
@@ -209,6 +212,41 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
     });
   };
 
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (slides.length <= 1) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStartRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+    setPointerDown(true);
+  };
+
+  const finishPointer = (e: PointerEvent<HTMLDivElement>, applySwipe: boolean) => {
+    const start = dragStartRef.current;
+    if (!start || start.pointerId !== e.pointerId) return;
+    dragStartRef.current = null;
+    setPointerDown(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
+    if (!applySwipe) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) < ROLLING_SWIPE_MIN_PX) return;
+    if (Math.abs(dx) < Math.abs(dy) * ROLLING_SWIPE_DOMINANCE) return;
+    if (dx < 0) go(1);
+    else go(-1);
+  };
+
+  const onPointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    finishPointer(e, true);
+  };
+
+  const onPointerCancel = (e: PointerEvent<HTMLDivElement>) => {
+    finishPointer(e, false);
+  };
+
   const pad = isMobile ? "0 2rem" : "0 3rem";
 
   return (
@@ -221,12 +259,12 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
           position: "relative",
         }}
       >
-        {slides.length > 1 && (
+        {slides.length > 1 && !isMobile && (
           <div
             style={{
               position: "absolute",
               top: 0,
-              right: isMobile ? "2rem" : "3rem",
+              right: "3rem",
               zIndex: 2,
               display: "flex",
               gap: "0.5rem",
@@ -276,7 +314,13 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
             borderRadius: "1.2rem",
             overflow: "hidden",
             backgroundColor: "#fff",
+            touchAction: isMobile ? "pan-y" : undefined,
+            cursor: slides.length > 1 ? (pointerDown ? "grabbing" : "grab") : undefined,
+            userSelect: slides.length > 1 ? "none" : undefined,
           }}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
         >
           <motion.div
             style={{
@@ -302,6 +346,7 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
                 <img
                   src={s.image_url}
                   alt=""
+                  draggable={false}
                   style={{
                     width: "100%",
                     height: "auto",
@@ -339,51 +384,69 @@ export function HomePage() {
 
   const [heroIndex, setHeroIndex] = useState(0);
   const [barProgress, setBarProgress] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
 
   const heroSlides4 = useMemo(() => normalizeHeroSlidesToFour(slides), [slides]);
 
-  const isPausedRef = useRef(false);
-  const wasPausedRef = useRef(false);
-  const slideStartRef = useRef(performance.now());
-  const elapsedAtPauseRef = useRef(0);
+  /** 현재 슬롯 자동 전환 시각(performance.now 기준). 일시정지 분은 끝나며 밀어 넣음 */
+  const slideDeadlineRef = useRef(performance.now() + HERO_AUTO_MS);
+  /** 탭 비활성 등으로 멈춘 시각 — 다시 보이면 deadline만큼 연장 */
+  const idleSinceRef = useRef<number | null>(null);
+  const lastBarProgressRef = useRef(-1);
 
-  useEffect(() => {
-    isPausedRef.current = isPaused;
-  }, [isPaused]);
-
-  useEffect(() => {
-    const now = performance.now();
-    if (isPaused && !wasPausedRef.current) {
-      elapsedAtPauseRef.current = now - slideStartRef.current;
-    } else if (!isPaused && wasPausedRef.current) {
-      slideStartRef.current = now - elapsedAtPauseRef.current;
-    }
-    wasPausedRef.current = isPaused;
-  }, [isPaused]);
+  const bumpSlideDeadline = () => {
+    slideDeadlineRef.current = performance.now() + HERO_AUTO_MS;
+    idleSinceRef.current = null;
+    lastBarProgressRef.current = -1;
+  };
 
   useEffect(() => {
     setHeroIndex(0);
-    slideStartRef.current = performance.now();
-    elapsedAtPauseRef.current = 0;
+    bumpSlideDeadline();
     setBarProgress(0);
   }, [heroSlides4]);
+
+  /** 탭이 백그라운드일 때는 RAF가 멈출 수 있어, 숨김 구간만큼 전환 시각을 밀어 줌 */
+  useEffect(() => {
+    const onVisibility = () => {
+      const now = performance.now();
+      if (document.visibilityState === "hidden") {
+        if (idleSinceRef.current === null) idleSinceRef.current = now;
+      } else if (idleSinceRef.current !== null) {
+        slideDeadlineRef.current += now - idleSinceRef.current;
+        idleSinceRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   useEffect(() => {
     let raf = 0;
     const tick = () => {
-      if (!isPausedRef.current) {
-        const now = performance.now();
-        const elapsed = now - slideStartRef.current;
-        const p = Math.min(1, elapsed / HERO_AUTO_MS);
-        setBarProgress(p);
-        if (p >= 1) {
-          setHeroIndex((i) => (i + 1) % HERO_TIMELINE_SLOTS);
-          slideStartRef.current = now;
-          elapsedAtPauseRef.current = 0;
-          setBarProgress(0);
+      if (document.visibilityState === "hidden") {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      const now = performance.now();
+      const remain = slideDeadlineRef.current - now;
+      if (remain <= 0) {
+        setHeroIndex((i) => (i + 1) % HERO_TIMELINE_SLOTS);
+        slideDeadlineRef.current = now + HERO_AUTO_MS;
+        lastBarProgressRef.current = -1;
+        setBarProgress(0);
+      } else {
+        const p = 1 - remain / HERO_AUTO_MS;
+        if (
+          lastBarProgressRef.current < 0 ||
+          Math.abs(p - lastBarProgressRef.current) >= HERO_PROGRESS_EPS ||
+          p >= 1 - HERO_PROGRESS_EPS
+        ) {
+          lastBarProgressRef.current = p;
+          setBarProgress(p);
         }
       }
+
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -392,13 +455,15 @@ export function HomePage() {
 
   const goHeroSlide = (idx: number) => {
     setHeroIndex(idx);
-    slideStartRef.current = performance.now();
-    elapsedAtPauseRef.current = 0;
+    bumpSlideDeadline();
     setBarProgress(0);
   };
 
   const activeHeroSlide = heroSlides4[heroIndex];
   const heroBgImage = activeHeroSlide?.image_url?.trim() ?? "";
+
+  const reduceMotion = useReducedMotion();
+
   const heroSlot = t.home.heroTimeline[heroIndex];
   const mainFromDb = heroMainLinesFromSlide(activeHeroSlide, lang);
   const subFromDb = heroSubLinesFromSlide(activeHeroSlide, lang);
@@ -448,28 +513,58 @@ export function HomePage() {
         style={{
           backgroundColor: "#0c0c0e",
         }}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
       >
-        {/* 슬라이드 배경 이미지 (4슬롯 중 현재) */}
-        <AnimatePresence mode="sync">
-          {heroBgImage && (
-            <motion.div
-              key={`${heroIndex}-${heroBgImage}`}
-              className="absolute inset-0 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-              style={{
-                zIndex: 0,
-                backgroundImage: `url(${heroBgImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {/* 슬라이드 배경: 크로스페이드 + 슬롯 동안 아주 느린 켄번즈(줌) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+          {heroBgImage ? (
+            reduceMotion ? (
+              <motion.div
+                key={`${heroIndex}-${heroBgImage}`}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                style={{
+                  backgroundImage: `url(${heroBgImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+            ) : (
+              <AnimatePresence initial={false} mode="sync">
+                <motion.div
+                  key={`${heroIndex}-${heroBgImage}`}
+                  className="absolute inset-0 overflow-hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: HERO_BG_FADE_SEC, ease: HERO_MOTION_EASE }}
+                >
+                  <motion.div
+                    className="absolute"
+                    style={{
+                      top: "-8%",
+                      left: "-8%",
+                      width: "116%",
+                      height: "116%",
+                      backgroundImage: `url(${heroBgImage})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      willChange: "transform",
+                    }}
+                    initial={{ scale: 1.1 }}
+                    animate={{ scale: [1.1, 1, 1.065] }}
+                    transition={{
+                      duration: HERO_AUTO_MS / 1000,
+                      times: [0, 0.14, 1],
+                      ease: ["easeOut", "linear", "linear"],
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            )
+          ) : null}
+        </div>
 
         {/* 다크 오버레이 */}
         <div
@@ -537,10 +632,10 @@ export function HomePage() {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={heroIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  initial={{ opacity: 0, y: 36 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -28 }}
+                  transition={{ duration: 0.5, ease: HERO_MOTION_EASE }}
                 >
                   <h1
                     style={{
@@ -602,9 +697,10 @@ export function HomePage() {
               </AnimatePresence>
 
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                key={`hero-cta-${heroIndex}`}
+                initial={{ opacity: 0, y: 22 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.14, ease: HERO_MOTION_EASE }}
                 style={{ display: "flex", flexWrap: "wrap", gap: "1.6rem" }}
               >
                 <Link
@@ -671,12 +767,17 @@ export function HomePage() {
                 const fillW = heroSegmentFillWidth(i, heroIndex, barProgress);
                 const done = i < heroIndex;
                 const barH = active ? 4 : done ? 3 : 2;
+                const titleForA11y = `${tlLine1}${tlLine2 ? ` ${tlLine2}` : ""}`.trim();
                 return (
                   <button
                     key={i}
                     type="button"
                     onClick={() => goHeroSlide(i)}
-                    aria-label={`히어로 ${i + 1}번`}
+                    aria-label={
+                      isMobile
+                        ? `${String(i + 1).padStart(2, "0")}. ${titleForA11y || `슬라이드 ${i + 1}`}`
+                        : `히어로 ${i + 1}번`
+                    }
                     aria-current={active ? "step" : undefined}
                     style={{
                       flex: 1,
@@ -717,9 +818,9 @@ export function HomePage() {
                           borderRadius: "1px",
                           boxShadow:
                             active && barProgress > 0.02
-                              ? "0 0 12px rgba(255,255,255,0.35)"
+                              ? "0 0 14px rgba(255,255,255,0.4)"
                               : "none",
-                          transition: "none",
+                          transition: "width 0.1s linear, height 0.2s ease-out, box-shadow 0.25s ease",
                         }}
                       />
                     </div>
@@ -730,29 +831,31 @@ export function HomePage() {
                         fontVariantNumeric: "tabular-nums",
                         color: active ? "#fff" : "rgba(255,255,255,0.4)",
                         letterSpacing: "0.1em",
-                        marginBottom: "0.5rem",
+                        marginBottom: isMobile ? 0 : "0.5rem",
                       }}
                     >
                       {String(i + 1).padStart(2, "0")}
                     </div>
-                    <p
-                      style={{
-                        fontSize: isMobile ? "0.92rem" : "clamp(0.98rem, 0.92vw, 1.15rem)",
-                        fontWeight: 500,
-                        lineHeight: 1.48,
-                        color: active ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.38)",
-                        wordBreak: "keep-all",
-                        margin: 0,
-                      }}
-                    >
-                      {tlLine1}
-                      {tlLine2 ? (
-                        <>
-                          <br />
-                          {tlLine2}
-                        </>
-                      ) : null}
-                    </p>
+                    {!isMobile ? (
+                      <p
+                        style={{
+                          fontSize: "clamp(0.98rem, 0.92vw, 1.15rem)",
+                          fontWeight: 500,
+                          lineHeight: 1.48,
+                          color: active ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.38)",
+                          wordBreak: "keep-all",
+                          margin: 0,
+                        }}
+                      >
+                        {tlLine1}
+                        {tlLine2 ? (
+                          <>
+                            <br />
+                            {tlLine2}
+                          </>
+                        ) : null}
+                      </p>
+                    ) : null}
                   </button>
                 );
               })}
