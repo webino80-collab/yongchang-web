@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { clsx } from "clsx";
 import { useLangStore } from "@/store/useLangStore";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import {
   certificateService,
   CERT_TYPES,
@@ -54,6 +55,7 @@ function GalleryThumb({ cert }: { cert: Certificate }) {
 
 export function CertificatePage() {
   const { lang } = useLangStore();
+  const { isMobile } = useBreakpoint();
   const [filterType, setFilterType] = useState<string>("all");
   const [page, setPage] = useState(1);
 
@@ -151,7 +153,10 @@ export function CertificatePage() {
 
         <div
           className="relative z-10 mx-auto flex h-full max-w-[1200px] flex-col justify-center text-left"
-          style={{ paddingLeft: "3rem", paddingRight: "3rem" }}
+          style={{
+            paddingLeft: isMobile ? "2rem" : "3rem",
+            paddingRight: isMobile ? "2rem" : "3rem",
+          }}
         >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -186,7 +191,13 @@ export function CertificatePage() {
       </section>
 
       {/* 본문 — 브로셔 페이지와 동일 여백 */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "5rem 3rem 8rem" }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "5rem 2rem 8rem" : "5rem 3rem 8rem",
+        }}
+      >
         {/* 섹션 헤더 — 브로셔 페이지와 동일 */}
         <div
           style={{

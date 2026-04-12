@@ -99,7 +99,7 @@ export function AboutPage() {
   const isNarrow = isMobile || isTablet;
 
   /* 반응형 섹션 내부 패딩 */
-  const secPad = isMobile ? "6rem 2.4rem" : "8.33% 3rem";
+  const secPad = isMobile ? "6rem 2rem" : "8.33% 3rem";
 
   return (
     <main className="brand">
@@ -118,7 +118,7 @@ export function AboutPage() {
             style={{
               maxWidth: "150rem",
               margin: "0 auto",
-              padding: isMobile ? "5rem 2.4rem 6rem" : isTablet ? "6rem 3rem 8rem" : "8.33% 3rem 16.5rem",
+              padding: isMobile ? "5rem 2rem 6rem" : isTablet ? "6rem 3rem 8rem" : "8.33% 3rem 16.5rem",
               minHeight: isMobile ? "auto" : "76rem",
               position: "relative",
             }}
@@ -419,7 +419,7 @@ export function AboutPage() {
 
             {/* ── 4. Timeline ── */}
             <div style={{ background: "#fff" }}>
-              <div style={{ maxWidth: "150rem", margin: "0 auto", padding: isMobile ? "6rem 2.4rem 8rem" : "8.33% 3rem 14rem" }}>
+              <div style={{ maxWidth: "150rem", margin: "0 auto", padding: isMobile ? "6rem 2rem 8rem" : "8.33% 3rem 14rem" }}>
                 <div style={{ display: "flex", flexDirection: isNarrow ? "column" : "row", gap: isNarrow ? "3.2rem" : "27rem" }}>
 
                   {/* 왼쪽: 제목 + timeline_img */}

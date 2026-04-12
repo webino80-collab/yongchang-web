@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useLangStore } from "@/store/useLangStore";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { productInfoService, productDisplayImages } from "@/lib/productInfoService";
 import { pageBannerService } from "@/lib/pageBannerService";
 import { productLandingService } from "@/lib/productLandingService";
@@ -121,6 +122,7 @@ function ProductPageBanner({
   subtitle: string;
   imageUrl?: string | null;
 }) {
+  const { isMobile } = useBreakpoint();
   return (
     <div
       style={{
@@ -166,7 +168,7 @@ function ProductPageBanner({
           zIndex: 1,
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "0 3rem",
+          padding: isMobile ? "0 2rem" : "0 3rem",
           height: "100%",
           display: "flex",
           flexDirection: "column",
@@ -344,6 +346,7 @@ function BrowseProductCard({ product, lang }: { product: Product; lang: string }
 /* ═══ ① 랜딩: PRODUCT + 2×2 카테고리 ═══ */
 export function ProductsLandingPage() {
   const { lang } = useLangStore();
+  const { isMobile } = useBreakpoint();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -401,7 +404,13 @@ export function ProductsLandingPage() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f7f7f7" }}>
       <ProductPageBanner title={headTitle} subtitle={headSubtitle} imageUrl={banner?.image_url} />
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "5rem 3rem 8rem" }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "5rem 2rem 8rem" : "5rem 3rem 8rem",
+        }}
+      >
         <div className="grid grid-cols-1 gap-[clamp(2rem,4vw,4rem)] md:grid-cols-2">
           {mergedLanding.map((g) => {
             const title = lang === "ko" ? g.titleKo : g.titleEn;
@@ -447,6 +456,7 @@ export function ProductsLandingPage() {
 /* ═══ ② 목록: 필터 + 4열 그리드 ═══ */
 export function ProductsBrowsePage() {
   const { lang } = useLangStore();
+  const { isMobile } = useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawCat = searchParams.get("cat") ?? "all";
   const activeCat: BrowsePill = BROWSE_PILLS.includes(rawCat as BrowsePill) ? (rawCat as BrowsePill) : "all";
@@ -492,7 +502,13 @@ export function ProductsBrowsePage() {
     <div style={{ minHeight: "100vh", backgroundColor: "#f7f7f7" }}>
       <ProductPageBanner title={headTitle} subtitle={headSubtitle} imageUrl={banner?.image_url} />
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "5rem 3rem 8rem" }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "5rem 2rem 8rem" : "5rem 3rem 8rem",
+        }}
+      >
         <div
           style={{
             display: "flex",
@@ -817,7 +833,7 @@ export function ProductDetailPage() {
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
       {/* 헤더·갤러리·표가 동일한 좌우 inset(패딩)을 쓰도록 한 컨테이너로 통일 */}
-      <div className="mx-auto w-full max-w-[1200px] px-6 pb-24 pt-12 md:px-12">
+      <div className="mx-auto w-full max-w-[1200px] px-5 pb-24 pt-12 md:px-12">
         <div
           style={{
             display: "flex",

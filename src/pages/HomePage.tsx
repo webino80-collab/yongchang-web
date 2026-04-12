@@ -209,7 +209,7 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
     });
   };
 
-  const pad = isMobile ? "0 2.4rem" : "0 3rem";
+  const pad = isMobile ? "0 2rem" : "0 3rem";
 
   return (
     <section style={{ backgroundColor: "#fff", padding: isMobile ? "4rem 0 0" : "6rem 0 0" }}>
@@ -226,7 +226,7 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
             style={{
               position: "absolute",
               top: 0,
-              right: isMobile ? "2.4rem" : "3rem",
+              right: isMobile ? "2rem" : "3rem",
               zIndex: 2,
               display: "flex",
               gap: "0.5rem",
@@ -528,8 +528,8 @@ export function HomePage() {
             <div
               className="section-inner w-full"
               style={{
-                paddingLeft: isMobile ? "2.4rem" : isTablet ? "3rem" : "1.5rem",
-                paddingRight: isMobile ? "2.4rem" : isTablet ? "3rem" : "1.5rem",
+                paddingLeft: isMobile ? "2rem" : isTablet ? "3rem" : "1.5rem",
+                paddingRight: isMobile ? "2rem" : isTablet ? "3rem" : "1.5rem",
                 paddingTop: 0,
                 paddingBottom: 0,
               }}
@@ -646,7 +646,7 @@ export function HomePage() {
               margin: "0 auto",
               boxSizing: "border-box",
               padding: isMobile
-                ? "0 2.4rem 2.4rem"
+                ? "0 2rem 2.4rem"
                 : isTablet
                 ? "0 3rem 3rem"
                 : "0 1.5rem 3.2rem",
@@ -784,8 +784,8 @@ export function HomePage() {
           style={{
             paddingTop: "100px",
             paddingBottom: isMobile ? "7rem" : "10rem",
-            paddingLeft: isMobile ? "2.4rem" : "1.5rem",
-            paddingRight: isMobile ? "2.4rem" : "1.5rem",
+            paddingLeft: isMobile ? "2rem" : "1.5rem",
+            paddingRight: isMobile ? "2rem" : "1.5rem",
           }}
         >
           {isMobile ? (
@@ -924,7 +924,7 @@ export function HomePage() {
       <section
         style={{
           background: `linear-gradient(135deg, #212020 0%, #1a1a1a 50%, ${PRIMARY} 100%)`,
-          padding: isMobile ? "6rem 2.4rem" : "10rem 0",
+          padding: isMobile ? "6rem 2rem" : "10rem 0",
         }}
       >
         <div className="section-inner text-center">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useLangStore } from "@/store/useLangStore";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { brochureService } from "@/lib/brochureService";
 import { pageBannerService } from "@/lib/pageBannerService";
 import type { Brochure } from "@/types";
@@ -149,6 +150,7 @@ function BrochureCard({ b, lang }: { b: Brochure; lang: string }) {
 /* ─── 페이지 ─── */
 export function BrochurePage() {
   const { lang } = useLangStore();
+  const { isMobile } = useBreakpoint();
   const [activeCategory, setActiveCategory] = useState("전체");
 
   const { data: brochures } = useQuery({
@@ -235,7 +237,7 @@ export function BrochurePage() {
           style={{
             position: "relative", zIndex: 1,
             maxWidth: 1200, margin: "0 auto",
-            padding: "0 3rem",
+            padding: isMobile ? "0 2rem" : "0 3rem",
             height: "100%",
             display: "flex", flexDirection: "column", justifyContent: "center",
           }}
@@ -273,7 +275,13 @@ export function BrochurePage() {
       </div>
 
       {/* ─── 본문 ─── */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "5rem 3rem 8rem" }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "5rem 2rem 8rem" : "5rem 3rem 8rem",
+        }}
+      >
 
         {/* 섹션 헤더 */}
         <div

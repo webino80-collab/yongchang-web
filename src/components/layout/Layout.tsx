@@ -443,7 +443,7 @@ export function Layout() {
           style={{
             maxWidth: 1500,
             margin: "0 auto",
-            padding: isMobile ? "4rem 2.4rem" : "5rem 3rem",
+            padding: isMobile ? "4rem 2rem" : "5rem 3rem",
             display: "flex",
             flexDirection: isMobile ? "column" : "row",
             alignItems: isMobile ? "flex-start" : "center",
@@ -498,7 +498,7 @@ export function Layout() {
         <div
           style={{
             borderTop: "1px solid #383838",
-            padding: "2rem 2.4rem",
+            padding: isMobile ? "2rem 2rem" : "2rem 2.4rem",
             textAlign: "center",
             fontSize: "1.4rem",
             color: "#666",
