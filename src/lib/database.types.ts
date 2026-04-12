@@ -305,6 +305,7 @@ export type Database = {
         Row: {
           id: string;
           image_url: string;
+          image_url_en: string | null;
           sort_order: number;
           is_active: boolean;
           created_at: string;
@@ -312,12 +313,14 @@ export type Database = {
         Insert: {
           id?: string;
           image_url: string;
+          image_url_en?: string | null;
           sort_order?: number;
           is_active?: boolean;
           created_at?: string;
         };
         Update: {
           image_url?: string;
+          image_url_en?: string | null;
           sort_order?: number;
           is_active?: boolean;
         };

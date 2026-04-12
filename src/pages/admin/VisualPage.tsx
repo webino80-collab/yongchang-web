@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { visualService } from "@/lib/visualService";
 import { homeRollingService } from "@/lib/homeRollingService";
@@ -345,9 +345,11 @@ function SlideRow({
   );
 }
 
-type RollingFormState = { image_url: string; sort_order: number };
+type RollingFormState = { image_url: string; image_url_en: string; sort_order: number };
 
-/* ── 롤링 이미지 폼 (히어로 아래, 이미지만) ── */
+type RollingImageFiles = { ko: File | null; en: File | null };
+
+/* ── 롤링 이미지 폼: 국문(필수) + 영문(선택) ── */
 function RollingImageForm({
   initial,
   onSubmit,
@@ -356,72 +358,78 @@ function RollingImageForm({
   submitLabel,
 }: {
   initial: RollingFormState;
-  onSubmit: (form: RollingFormState, file: File | null) => void;
+  onSubmit: (form: RollingFormState, files: RollingImageFiles) => void;
   onCancel?: () => void;
   isPending: boolean;
   submitLabel: string;
 }) {
   const [form, setForm] = useState<RollingFormState>(initial);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState(initial.image_url);
-  const [uploadMode, setUploadMode] = useState<"file" | "url">(
+  const [fileKo, setFileKo] = useState<File | null>(null);
+  const [fileEn, setFileEn] = useState<File | null>(null);
+  const [previewKo, setPreviewKo] = useState(initial.image_url);
+  const [previewEn, setPreviewEn] = useState(initial.image_url_en ?? "");
+  const [uploadModeKo, setUploadModeKo] = useState<"file" | "url">(
     initial.image_url ? "url" : "file"
   );
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadModeEn, setUploadModeEn] = useState<"file" | "url">(
+    (initial.image_url_en ?? "").trim() ? "url" : "file"
+  );
+  const fileKoRef = useRef<HTMLInputElement>(null);
+  const fileEnRef = useRef<HTMLInputElement>(null);
 
-  const valid =
-    uploadMode === "file" ? !!file || !!initial.image_url.trim() : !!form.image_url.trim();
+  useEffect(() => {
+    setForm(initial);
+    setFileKo(null);
+    setFileEn(null);
+    setPreviewKo(initial.image_url);
+    setPreviewEn(initial.image_url_en ?? "");
+    setUploadModeKo(initial.image_url ? "url" : "file");
+    setUploadModeEn((initial.image_url_en ?? "").trim() ? "url" : "file");
+  }, [initial.image_url, initial.image_url_en, initial.sort_order]);
+
+  const validKo =
+    uploadModeKo === "file" ? !!fileKo || !!form.image_url.trim() : !!form.image_url.trim();
+
+  const modeBtn = (active: boolean) =>
+    clsx(
+      "px-3 py-1.5 rounded text-sm font-medium border transition-colors",
+      active
+        ? "bg-[#000081] text-white border-[#000081]"
+        : "bg-white text-gray-600 border-gray-300"
+    );
 
   return (
-    <div className="space-y-4">
-      <div>
-        <label className="label">이미지</label>
-        <div className="flex gap-2 mb-3">
-          <button
-            type="button"
-            onClick={() => setUploadMode("file")}
-            className={clsx(
-              "px-3 py-1.5 rounded text-sm font-medium border transition-colors",
-              uploadMode === "file"
-                ? "bg-[#000081] text-white border-[#000081]"
-                : "bg-white text-gray-600 border-gray-300"
-            )}
-          >
+    <div className="space-y-6">
+      <div className="rounded-lg border border-gray-200 bg-gray-50/80 p-4 space-y-3">
+        <p className="text-sm font-semibold text-gray-800">국문 이미지 (필수)</p>
+        <div className="flex gap-2 mb-2">
+          <button type="button" onClick={() => setUploadModeKo("file")} className={modeBtn(uploadModeKo === "file")}>
             파일 업로드
           </button>
-          <button
-            type="button"
-            onClick={() => setUploadMode("url")}
-            className={clsx(
-              "px-3 py-1.5 rounded text-sm font-medium border transition-colors",
-              uploadMode === "url"
-                ? "bg-[#000081] text-white border-[#000081]"
-                : "bg-white text-gray-600 border-gray-300"
-            )}
-          >
+          <button type="button" onClick={() => setUploadModeKo("url")} className={modeBtn(uploadModeKo === "url")}>
             URL 입력
           </button>
         </div>
-        {uploadMode === "file" ? (
+        {uploadModeKo === "file" ? (
           <div
-            onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#000081]"
+            onClick={() => fileKoRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#000081] bg-white"
           >
-            {preview ? (
-              <img src={preview} alt="" className="mx-auto max-h-40 object-contain rounded" />
+            {previewKo ? (
+              <img src={previewKo} alt="" className="mx-auto max-h-40 object-contain rounded" />
             ) : (
               <p className="text-gray-400 text-sm py-4">클릭하여 이미지 선택</p>
             )}
             <input
-              ref={fileRef}
+              ref={fileKoRef}
               type="file"
               accept="image/*"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
-                setFile(f);
-                setPreview(URL.createObjectURL(f));
+                setFileKo(f);
+                setPreviewKo(URL.createObjectURL(f));
                 setForm((p) => ({ ...p, image_url: "" }));
               }}
             />
@@ -435,16 +443,74 @@ function RollingImageForm({
               value={form.image_url}
               onChange={(e) => {
                 setForm((p) => ({ ...p, image_url: e.target.value }));
-                setPreview(e.target.value);
-                setFile(null);
+                setPreviewKo(e.target.value);
+                setFileKo(null);
               }}
             />
-            {preview && (
-              <img src={preview} alt="" className="mt-2 max-h-32 object-contain rounded border" />
-            )}
+            {previewKo ? (
+              <img src={previewKo} alt="" className="mt-2 max-h-32 object-contain rounded border bg-white" />
+            ) : null}
           </div>
         )}
       </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+        <p className="text-sm font-semibold text-gray-800">영문 이미지 (선택)</p>
+        <p className="text-xs text-gray-500 -mt-1">
+          비우면 영문 사이트에서도 국문 이미지가 표시됩니다.
+        </p>
+        <div className="flex gap-2 mb-2">
+          <button type="button" onClick={() => setUploadModeEn("file")} className={modeBtn(uploadModeEn === "file")}>
+            파일 업로드
+          </button>
+          <button type="button" onClick={() => setUploadModeEn("url")} className={modeBtn(uploadModeEn === "url")}>
+            URL 입력
+          </button>
+        </div>
+        {uploadModeEn === "file" ? (
+          <div
+            onClick={() => fileEnRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-[#000081]"
+          >
+            {previewEn ? (
+              <img src={previewEn} alt="" className="mx-auto max-h-40 object-contain rounded" />
+            ) : (
+              <p className="text-gray-400 text-sm py-4">클릭하여 영문용 이미지 선택</p>
+            )}
+            <input
+              ref={fileEnRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setFileEn(f);
+                setPreviewEn(URL.createObjectURL(f));
+                setForm((p) => ({ ...p, image_url_en: "" }));
+              }}
+            />
+          </div>
+        ) : (
+          <div>
+            <input
+              type="url"
+              className="input"
+              placeholder="https://... (영문 배너 URL)"
+              value={form.image_url_en}
+              onChange={(e) => {
+                setForm((p) => ({ ...p, image_url_en: e.target.value }));
+                setPreviewEn(e.target.value);
+                setFileEn(null);
+              }}
+            />
+            {previewEn ? (
+              <img src={previewEn} alt="" className="mt-2 max-h-32 object-contain rounded border" />
+            ) : null}
+          </div>
+        )}
+      </div>
+
       <div>
         <label className="label">표시 순서</label>
         <input
@@ -459,8 +525,8 @@ function RollingImageForm({
       <div className="flex gap-2 pt-1">
         <button
           type="button"
-          disabled={!valid || isPending}
-          onClick={() => onSubmit(form, file)}
+          disabled={!validKo || isPending}
+          onClick={() => onSubmit(form, { ko: fileKo, en: fileEn })}
           className="btn btn-primary"
         >
           {isPending ? "처리 중..." : submitLabel}
@@ -501,12 +567,25 @@ function RollingSlideRow({
         slide.is_active ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-gray-50 opacity-60"
       )}
     >
-      <div className="w-32 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0 border">
-        {slide.image_url ? (
-          <img src={slide.image_url} alt="" className="w-full h-full object-contain" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">없음</div>
-        )}
+      <div className="flex gap-1 shrink-0">
+        <div className="w-[4.5rem] h-16 rounded-lg overflow-hidden bg-gray-100 border relative">
+          {slide.image_url ? (
+            <img src={slide.image_url} alt="" className="w-full h-full object-contain" title="국문" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">국문</div>
+          )}
+          <span className="absolute bottom-0 left-0 right-0 bg-black/55 text-[9px] text-white text-center py-0.5">KO</span>
+        </div>
+        <div className="w-[4.5rem] h-16 rounded-lg overflow-hidden bg-gray-100 border relative">
+          {(slide.image_url_en ?? "").trim() ? (
+            <img src={slide.image_url_en!} alt="" className="w-full h-full object-contain" title="영문" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 px-1 text-center leading-tight">
+              국문과 동일
+            </div>
+          )}
+          <span className="absolute bottom-0 left-0 right-0 bg-black/55 text-[9px] text-white text-center py-0.5">EN</span>
+        </div>
       </div>
       <div className="flex-1 min-w-0 text-sm text-gray-600">
         순서 {slide.sort_order}
@@ -637,10 +716,16 @@ export function VisualPage() {
   };
 
   const createRollingMut = useMutation({
-    mutationFn: async ({ form, file }: { form: RollingFormState; file: File | null }) => {
+    mutationFn: async ({ form, files }: { form: RollingFormState; files: RollingImageFiles }) => {
       let image_url = form.image_url;
-      if (file) image_url = await homeRollingService.uploadImage(file);
-      await homeRollingService.createSlide({ image_url, sort_order: form.sort_order });
+      if (files.ko) image_url = await homeRollingService.uploadImage(files.ko);
+      let image_url_en: string | null = form.image_url_en.trim() || null;
+      if (files.en) image_url_en = await homeRollingService.uploadImage(files.en);
+      await homeRollingService.createSlide({
+        image_url,
+        image_url_en,
+        sort_order: form.sort_order,
+      });
     },
     onSuccess: () => {
       invalidateRolling();
@@ -652,16 +737,32 @@ export function VisualPage() {
   const updateRollingMut = useMutation({
     mutationFn: async ({
       id,
+      prev,
       form,
-      file,
+      files,
     }: {
       id: string;
+      prev: HomeRollingSlide;
       form: RollingFormState;
-      file: File | null;
+      files: RollingImageFiles;
     }) => {
       let image_url = form.image_url;
-      if (file) image_url = await homeRollingService.uploadImage(file);
-      await homeRollingService.updateSlide(id, { image_url, sort_order: form.sort_order });
+      if (files.ko) {
+        await homeRollingService.deleteImage(prev.image_url);
+        image_url = await homeRollingService.uploadImage(files.ko);
+      }
+      let image_url_en: string | null = form.image_url_en.trim() || null;
+      if (files.en) {
+        if (prev.image_url_en) await homeRollingService.deleteImage(prev.image_url_en);
+        image_url_en = await homeRollingService.uploadImage(files.en);
+      } else if (!image_url_en && prev.image_url_en) {
+        await homeRollingService.deleteImage(prev.image_url_en);
+      }
+      await homeRollingService.updateSlide(id, {
+        image_url,
+        image_url_en,
+        sort_order: form.sort_order,
+      });
     },
     onSuccess: () => {
       invalidateRolling();
@@ -680,6 +781,7 @@ export function VisualPage() {
     mutationFn: async (slide: HomeRollingSlide) => {
       await homeRollingService.deleteSlide(slide.id);
       await homeRollingService.deleteImage(slide.image_url);
+      if (slide.image_url_en) await homeRollingService.deleteImage(slide.image_url_en);
     },
     onSuccess: invalidateRolling,
     onError: (e: Error) => alert(`삭제 실패: ${e.message}`),
@@ -790,7 +892,7 @@ export function VisualPage() {
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900">메인 롤링 이미지 (히어로 바로 아래)</h2>
         <p className="text-sm text-gray-500 mt-1">
-          흰색 배경 영역에 순서대로 최대 3장이 자동 전환됩니다. <code>hero-images</code> 버킷에 업로드됩니다.
+          흰색 배경 영역에 순서대로 최대 3장이 자동 전환됩니다. 국문·영문 이미지를 각각 등록하면 언어 전환 시 맞는 배너가 보이고, 영문만 비우면 국문 이미지가 그대로 쓰입니다. <code>hero-images</code> 버킷에 업로드됩니다.
         </p>
         <button
           type="button"
@@ -808,8 +910,8 @@ export function VisualPage() {
         <div className="card p-5 mb-6 border-2 border-[#000081]/15">
           <h3 className="text-base font-bold text-gray-800 mb-4">롤링 이미지 등록</h3>
           <RollingImageForm
-            initial={{ image_url: "", sort_order: rollingSlides.length }}
-            onSubmit={(form, file) => createRollingMut.mutate({ form, file })}
+            initial={{ image_url: "", image_url_en: "", sort_order: rollingSlides.length }}
+            onSubmit={(form, files) => createRollingMut.mutate({ form, files })}
             onCancel={() => setShowRollingForm(false)}
             isPending={createRollingMut.isPending}
             submitLabel="등록"
@@ -829,10 +931,11 @@ export function VisualPage() {
                   <RollingImageForm
                     initial={{
                       image_url: rs.image_url,
+                      image_url_en: rs.image_url_en ?? "",
                       sort_order: rs.sort_order,
                     }}
-                    onSubmit={(form, file) =>
-                      updateRollingMut.mutate({ id: rs.id, form, file })
+                    onSubmit={(form, files) =>
+                      updateRollingMut.mutate({ id: rs.id, prev: rs, form, files })
                     }
                     onCancel={() => setRollingEditingId(null)}
                     isPending={updateRollingMut.isPending}

@@ -26,11 +26,17 @@ export const homeRollingService = {
     return (data as HomeRollingSlide[]) ?? [];
   },
 
-  async createSlide(input: { image_url: string; sort_order?: number }): Promise<HomeRollingSlide> {
+  async createSlide(input: {
+    image_url: string;
+    image_url_en?: string | null;
+    sort_order?: number;
+  }): Promise<HomeRollingSlide> {
+    const en = input.image_url_en?.trim() || null;
     const { data, error } = await supabase
       .from(TABLE)
       .insert({
         image_url: input.image_url,
+        image_url_en: en,
         sort_order: input.sort_order ?? 0,
       })
       .select()
@@ -41,7 +47,7 @@ export const homeRollingService = {
 
   async updateSlide(
     id: string,
-    input: Partial<Pick<HomeRollingSlide, "image_url" | "sort_order" | "is_active">>
+    input: Partial<Pick<HomeRollingSlide, "image_url" | "image_url_en" | "sort_order" | "is_active">>
   ): Promise<HomeRollingSlide> {
     const { data, error } = await supabase.from(TABLE).update(input).eq("id", id).select().single();
     if (error) throw error;

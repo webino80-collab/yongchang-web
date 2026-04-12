@@ -61,6 +61,9 @@ create policy "admin all" on public.home_rolling_slides
 
 grant select on public.home_rolling_slides to anon, authenticated;
 
+alter table public.home_rolling_slides
+  add column if not exists image_url_en text null;
+
 -- ---- hero_slides 영문 컬럼 ----
 alter table public.hero_slides
   add column if not exists main_text_en text;

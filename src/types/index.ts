@@ -131,6 +131,8 @@ export interface HeroSlide {
 export interface HomeRollingSlide {
   id: string;
   image_url: string;
+  /** 영문 사이트용. 없으면 `image_url` 사용 */
+  image_url_en?: string | null;
   sort_order: number;
   is_active: boolean;
   created_at: string;

@@ -189,10 +189,22 @@ function ProductCard({
   );
 }
 
+function rollingSlideImageUrl(slide: HomeRollingSlide, langUi: "ko" | "en"): string {
+  const en = (slide.image_url_en ?? "").trim();
+  if (langUi === "en" && en) return en;
+  return slide.image_url;
+}
+
 /* ════════════════════════════════════════
    히어로 아래 — 관리자 등록 이미지 3장 롤링
 ════════════════════════════════════════ */
-function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
+function HomeRollingCarousel({
+  slides,
+  langUi,
+}: {
+  slides: HomeRollingSlide[];
+  langUi: "ko" | "en";
+}) {
   const [idx, setIdx] = useState(0);
   const [pointerDown, setPointerDown] = useState(false);
   const { isMobile } = useBreakpoint();
@@ -201,7 +213,7 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
   const slideKey = slides.map((s) => s.id).join("|");
   useEffect(() => {
     setIdx(0);
-  }, [slideKey]);
+  }, [slideKey, langUi]);
 
   if (slides.length === 0) return null;
 
@@ -344,7 +356,7 @@ function HomeRollingCarousel({ slides }: { slides: HomeRollingSlide[] }) {
                 }}
               >
                 <img
-                  src={s.image_url}
+                  src={rollingSlideImageUrl(s, langUi)}
                   alt=""
                   draggable={false}
                   style={{
@@ -868,7 +880,7 @@ export function HomePage() {
       {/* ══════════════════════════════════
           2. 히어로 아래 롤링 이미지 (관리자 등록 최대 3장)
       ══════════════════════════════════ */}
-      <HomeRollingCarousel slides={rollingSlides} />
+      <HomeRollingCarousel slides={rollingSlides} langUi={lang === "en" ? "en" : "ko"} />
 
       {/* ══════════════════════════════════
           3. PRODUCTS
