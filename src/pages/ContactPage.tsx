@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLangStore } from "@/store/useLangStore";
 import { ContactForm } from "@/components/contact/ContactForm";
 
@@ -26,13 +26,51 @@ function googleMapsOpenUrlForLang(lang: "ko" | "en"): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
+/** Static Maps — 임베드보다 가볍게 먼저 그려 체감 속도 개선 (동일 API 키, 콘솔에서 Static Maps API 활성화 필요) */
+function contactStaticMapSrc(lang: "ko" | "en"): string | null {
+  const key = (import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY as string | undefined)?.trim();
+  if (!key) return null;
+  const q = lang === "ko" ? COMPANY_ADDRESS_KO : COMPANY_ADDRESS_EN;
+  const center = encodeURIComponent(q);
+  const hl = lang === "ko" ? "ko" : "en";
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=17&size=640x360&scale=2&maptype=roadmap&markers=color:0xea4335%7C${center}&key=${encodeURIComponent(key)}&language=${hl}`;
+}
+
+const MAP_PRECONNECTS = [
+  "https://www.google.com",
+  "https://maps.gstatic.com",
+  "https://maps.googleapis.com",
+] as const;
+
 export function ContactPage() {
   const { lang } = useLangStore();
   const langUi = lang === "en" ? "en" : "ko";
   const mapSrc = contactMapEmbedSrc(langUi);
+  const staticMapSrc = contactStaticMapSrc(langUi);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [staticMapFailed, setStaticMapFailed] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    setIframeLoaded(false);
+    setStaticMapFailed(false);
+  }, [mapSrc, staticMapSrc]);
+
+  useEffect(() => {
+    const links: HTMLLinkElement[] = [];
+    for (const href of MAP_PRECONNECTS) {
+      const el = document.createElement("link");
+      el.rel = "preconnect";
+      el.href = href;
+      document.head.appendChild(el);
+      links.push(el);
+    }
+    return () => {
+      for (const el of links) el.remove();
+    };
   }, []);
 
   return (
@@ -50,11 +88,71 @@ export function ContactPage() {
           backgroundColor: "#e8eaed",
         }}
       >
+        {staticMapSrc && !staticMapFailed && (
+          <img
+            src={staticMapSrc}
+            alt=""
+            decoding="async"
+            fetchPriority="high"
+            onError={() => setStaticMapFailed(true)}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+              zIndex: 0,
+              opacity: iframeLoaded ? 0 : 1,
+              transition: "opacity 0.35s ease",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+        {!iframeLoaded && (!staticMapSrc || staticMapFailed) && (
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background:
+                "linear-gradient(160deg, #e8eef5 0%, #dfe6ee 45%, #e8eaed 100%)",
+            }}
+          >
+            <div
+              style={{
+                width: "2.8rem",
+                height: "2.8rem",
+                borderRadius: "50%",
+                border: "3px solid rgba(26,115,232,0.25)",
+                borderTopColor: "#1a73e8",
+                animation: "spin 0.75s linear infinite",
+              }}
+            />
+          </div>
+        )}
         <iframe
           key={mapSrc}
           src={mapSrc}
           title={lang === "ko" ? "회사 위치 — Google 지도" : "Company location — Google Maps"}
-          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          onLoad={() => setIframeLoaded(true)}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            width: "100%",
+            height: "100%",
+            border: "none",
+            display: "block",
+            opacity: iframeLoaded ? 1 : 0,
+            transition: "opacity 0.35s ease",
+            pointerEvents: iframeLoaded ? "auto" : "none",
+          }}
           allowFullScreen
         />
         <a
