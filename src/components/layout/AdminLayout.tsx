@@ -1,7 +1,19 @@
-import { Link, NavLink, Outlet, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, NavLink, Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { PageSpinner } from "@/components/ui/Spinner";
 import { clsx } from "clsx";
+import { authService } from "@/lib/authService";
+import {
+  isLevel5ContentAdmin,
+  isLevel5AdminPathAllowed,
+  LEVEL5_ADMIN_DEFAULT_PATH,
+  LEVEL5_ADMIN_NAV_PATHS,
+} from "@/lib/adminAccess";
+
+const LEVEL5_NAV_ORDER = new Map<string, number>(
+  LEVEL5_ADMIN_NAV_PATHS.map((p, i) => [p, i])
+);
 
 const navItems = [
   { to: "/admin",              label: "대시보드",        icon: "📊", exact: true },
@@ -13,19 +25,57 @@ const navItems = [
   { to: "/admin/certificates", label: "특허·인증 관리",  icon: "📜" },
   { to: "/admin/brochures",    label: "브로셔 관리",     icon: "📂" },
   { to: "/admin/boards",       label: "게시판 관리",     icon: "📋" },
+  { to: "/admin/create-operator", label: "운영자 계정 생성", icon: "➕" },
   { to: "/admin/members",      label: "회원 관리",       icon: "👥" },
   { to: "/admin/posts",        label: "게시글 관리",     icon: "📝" },
   { to: "/admin/inquiries",    label: "문의 관리",       icon: "💬" },
 ];
 
+function navItemsForProfile(profile: ReturnType<typeof useAuth>["profile"]) {
+  if (!isLevel5ContentAdmin(profile)) return navItems;
+  const allowed = new Set<string>(LEVEL5_ADMIN_NAV_PATHS);
+  return navItems
+    .filter((item) => allowed.has(item.to))
+    .sort((a, b) => (LEVEL5_NAV_ORDER.get(a.to) ?? 99) - (LEVEL5_NAV_ORDER.get(b.to) ?? 99));
+}
+
 export function AdminLayout() {
-  const { user, profile, loading, profileLoading } = useAuth();
+  const { user, profile, loading, profileLoading, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const level5Content = isLevel5ContentAdmin(profile);
+
+  /** 레벨 5: 탭/창을 닫을 때 등 pagehide 시 세션 종료(SPA 내 /admin 전환에는 발생하지 않음). 새로고침 시에도 호출될 수 있음 */
+  useEffect(() => {
+    if (!level5Content) return;
+    const onPageHide = (e: PageTransitionEvent) => {
+      if (e.persisted) return;
+      void authService.signOut();
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, [level5Content]);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/", { replace: true });
+  };
 
   if (loading || (user && profileLoading)) return <PageSpinner />;
 
   // profiles.is_admin 또는 Supabase app_metadata.is_admin 둘 중 하나라도 true면 허용
   const isAdmin = profile?.is_admin === true || user?.app_metadata?.is_admin === true;
   if (!user || !isAdmin) return <Navigate to="/" replace />;
+
+  const sidebarNav = navItemsForProfile(profile);
+
+  const mainContent =
+    level5Content && !isLevel5AdminPathAllowed(location.pathname) ? (
+      <Navigate to={LEVEL5_ADMIN_DEFAULT_PATH} replace />
+    ) : (
+      <Outlet />
+    );
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -39,7 +89,7 @@ export function AdminLayout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5">
-          {navItems.map(({ to, label, icon, exact }) => (
+          {sidebarNav.map(({ to, label, icon, exact }) => (
             <NavLink
               key={to}
               to={to}
@@ -78,6 +128,13 @@ export function AdminLayout() {
             </svg>
             사이트로 이동
           </Link>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="mt-1 flex items-center justify-center gap-1.5 w-full text-xs text-gray-400 hover:text-white transition-colors py-1.5 rounded hover:bg-white/10"
+          >
+            로그아웃
+          </button>
         </div>
       </aside>
 
@@ -85,13 +142,20 @@ export function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between shrink-0">
           <h1 className="text-sm font-semibold text-gray-700">관리자 패널</h1>
-          <div className="flex items-center gap-2">
-            <span className="badge badge-navy">관리자</span>
+          <div className="flex items-center gap-3">
+            <span className="badge badge-navy">{level5Content ? "콘텐츠 관리자" : "관리자"}</span>
             <span className="text-sm text-gray-500">{profile?.nickname ?? user?.email}</span>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="text-sm text-gray-500 hover:text-[#0f2d52] underline-offset-2 hover:underline"
+            >
+              로그아웃
+            </button>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">
-          <Outlet />
+          {mainContent}
         </main>
       </div>
     </div>

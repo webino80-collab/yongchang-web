@@ -26,6 +26,7 @@ import { PageBannerAdminPage } from "@/pages/admin/PageBannerAdminPage";
 import { ProductLandingAdminPage } from "@/pages/admin/ProductLandingAdminPage";
 import { BoardsPage } from "@/pages/admin/BoardsPage";
 import { MembersPage } from "@/pages/admin/MembersPage";
+import { CreateOperatorPage } from "@/pages/admin/CreateOperatorPage";
 import { PostsPage } from "@/pages/admin/PostsPage";
 import { InquiriesPage } from "@/pages/admin/InquiriesPage";
 
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="page-banners" element={<PageBannerAdminPage />} />
         <Route path="product-landing" element={<ProductLandingAdminPage />} />
         <Route path="boards" element={<BoardsPage />} />
+        <Route path="create-operator" element={<CreateOperatorPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="posts" element={<PostsPage />} />
         <Route path="inquiries" element={<InquiriesPage />} />
