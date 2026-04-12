@@ -78,17 +78,17 @@ export function AdminLayout() {
     );
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* 사이드바 */}
-      <aside className="w-60 bg-[#0f2d52] text-gray-300 flex-shrink-0 flex flex-col">
-        <div className="p-5 border-b border-white/10">
+    <div className="flex h-[100dvh] min-h-0 overflow-hidden bg-gray-50">
+      {/* 사이드바 — 뷰포트 높이 고정 + 메뉴만 스크롤, 하단 로그아웃 항상 노출 */}
+      <aside className="flex h-full min-h-0 w-60 shrink-0 flex-col bg-[#0f2d52] text-gray-300">
+        <div className="shrink-0 border-b border-white/10 p-5">
           <Link to="/" className="block">
             <p className="text-[10px] tracking-widest text-blue-300 uppercase mb-0.5">Admin Panel</p>
             <p className="text-white font-bold text-lg leading-tight">주식회사 용창</p>
           </Link>
         </div>
 
-        <nav className="flex-1 p-3 space-y-0.5">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-3">
           {sidebarNav.map(({ to, label, icon, exact }) => (
             <NavLink
               key={to}
@@ -109,7 +109,7 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="shrink-0 border-t border-white/10 p-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-[#2e7cf6] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {(profile?.nickname?.[0] ?? user?.email?.[0] ?? "A").toUpperCase()}
@@ -131,7 +131,7 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={() => void handleLogout()}
-            className="mt-1 flex items-center justify-center gap-1.5 w-full text-xs text-gray-400 hover:text-white transition-colors py-1.5 rounded hover:bg-white/10"
+            className="mt-1 flex w-full items-center justify-center gap-1.5 rounded py-1.5 text-xs text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
           >
             로그아웃
           </button>
@@ -139,22 +139,24 @@ export function AdminLayout() {
       </aside>
 
       {/* 본문 */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between shrink-0">
-          <h1 className="text-sm font-semibold text-gray-700">관리자 패널</h1>
-          <div className="flex items-center gap-3">
-            <span className="badge badge-navy">{level5Content ? "콘텐츠 관리자" : "관리자"}</span>
-            <span className="text-sm text-gray-500">{profile?.nickname ?? user?.email}</span>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 sm:px-6">
+          <h1 className="shrink-0 text-sm font-semibold text-gray-700">관리자 패널</h1>
+          <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+            <span className="badge badge-navy shrink-0">{level5Content ? "콘텐츠 관리자" : "관리자"}</span>
+            <span className="min-w-0 max-w-[9rem] truncate text-sm text-gray-500 sm:max-w-[14rem] md:max-w-xs">
+              {profile?.nickname ?? user?.email}
+            </span>
             <button
               type="button"
               onClick={() => void handleLogout()}
-              className="text-sm text-gray-500 hover:text-[#0f2d52] underline-offset-2 hover:underline"
+              className="shrink-0 text-sm font-medium text-[#0f2d52] underline-offset-2 hover:underline"
             >
               로그아웃
             </button>
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="min-h-0 flex-1 overflow-auto p-6">
           {mainContent}
         </main>
       </div>
