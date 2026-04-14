@@ -1,5 +1,6 @@
 /**
- * Cloudflare Pages Functions — 모든 요청 전에 실행됩니다.
+ * Cloudflare Pages Functions — `functions/[[path]].ts` 등과 함께 쓰일 때
+ * 매칭되는 라우트가 있어야 호출됩니다. `[[path]].ts`를 참고하세요.
  *
  * - Cloudflare가 넣어 주는 `cf-ipcountry`가 **KR**이면 국문 사이트(통과).
  * - **확실한 해외** 국가 코드(예: US)면 브라우저 언어와 무관하게 `/en`으로 보냄
