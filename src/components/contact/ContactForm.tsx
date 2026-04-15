@@ -86,11 +86,16 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
       setSubmitted(true);
       reset();
       setCharCount(0);
-    } catch {
+    } catch (e) {
+      const hint =
+        import.meta.env.DEV && e instanceof Error && e.message
+          ? ` (${e.message.slice(0, 120)})`
+          : "";
       setError("root", {
-        message: lang === "ko"
-          ? "문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-          : "An error occurred. Please try again later.",
+        message:
+          (lang === "ko"
+            ? "문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            : "An error occurred. Please try again later.") + hint,
       });
     }
   };

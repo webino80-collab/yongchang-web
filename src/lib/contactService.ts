@@ -1,5 +1,17 @@
 import { supabase } from "./supabaseClient";
 import type { ContactInquiry } from "@/types";
+import type { Database } from "./database.types";
+
+type CreatedContactRow = Database["public"]["Functions"]["create_contact_inquiry"]["Returns"];
+
+function unwrapCreateContactRow(data: unknown): CreatedContactRow {
+  if (data == null) throw new Error("create_contact_inquiry returned empty");
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row !== "object" || !("id" in row)) {
+    throw new Error("create_contact_inquiry returned invalid row");
+  }
+  return row as CreatedContactRow;
+}
 
 export const contactService = {
   /**
@@ -17,25 +29,21 @@ export const contactService = {
     /** 숨김 필드(스팸 방지) — DB에 저장하지 않음 */
     hp?: string;
   }): Promise<void> {
-    const row = {
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone?.trim() || null,
-      subject: payload.subject,
-      message: payload.message,
-    };
-
-    const { data, error } = await supabase
-      .from("contact_inquiries")
-      .insert(row)
-      .select()
-      .single();
+    // anon은 contact_inquiries SELECT RLS로 insert().select() 불가 → RPC로 INSERT 후 행 반환
+    const { data, error } = await supabase.rpc("create_contact_inquiry", {
+      p_name: payload.name,
+      p_email: payload.email,
+      p_phone: payload.phone?.trim() ?? "",
+      p_subject: payload.subject,
+      p_message: payload.message,
+    });
 
     if (error) throw error;
-    if (!data) throw new Error("insert returned no row");
+
+    const row = unwrapCreateContactRow(data);
 
     const { error: fnError } = await supabase.functions.invoke("send-contact-mail", {
-      body: { record: data },
+      body: { record: row },
     });
 
     if (fnError) {

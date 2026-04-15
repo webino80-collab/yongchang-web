@@ -24,6 +24,8 @@ const fetchWithTimeout: typeof fetch = (input, init) => {
   if (url.includes("/auth/v1/")) return fetch(input, init);
   // Storage 업로드/다운로드는 용량에 따라 10초를 넘길 수 있음 (타임아웃으로 업로드 실패 방지)
   if (url.includes("/storage/v1/")) return fetch(input, init);
+  // Edge Functions는 콜드 스타트·메일 Worker 호출 등으로 10초를 넘길 수 있음 (문의 submit → invoke)
+  if (url.includes("/functions/v1/")) return fetch(input, init);
 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error("Supabase 요청 시간 초과 (10s)")), 10_000)

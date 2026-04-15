@@ -71,13 +71,15 @@ async function verifyContactRowMatchesDb(record: ContactPayload): Promise<boolea
   if (error || !data) return false;
 
   const norm = (s: string | null | undefined) => String(s ?? "").trim();
+  const normMsg = (s: string | null | undefined) =>
+    norm(s).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const pe = norm(record.email).toLowerCase();
   const de = norm(data.email).toLowerCase();
   return (
     norm(data.name) === norm(record.name) &&
     de === pe &&
     norm(data.subject) === norm(record.subject) &&
-    norm(data.message) === norm(record.message) &&
+    normMsg(data.message) === normMsg(record.message) &&
     norm(data.phone ?? "") === norm(record.phone ?? "")
   );
 }

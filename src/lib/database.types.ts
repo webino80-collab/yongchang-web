@@ -638,7 +638,30 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      create_contact_inquiry: {
+        Args: {
+          p_name: string;
+          p_email: string;
+          p_phone: string;
+          p_subject: string;
+          p_message: string;
+        };
+        Returns: {
+          id: string;
+          name: string;
+          email: string;
+          phone: string | null;
+          subject: string;
+          message: string;
+          is_read: boolean;
+          reply_content: string | null;
+          replied_at: string | null;
+          ip: string | null;
+          created_at: string;
+        };
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
