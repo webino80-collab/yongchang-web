@@ -46,6 +46,10 @@ export function InquiriesPage() {
         setReplyText("");
       }
     },
+    onError: (e) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      window.alert(msg);
+    },
   });
 
   const handleOpen = (inquiry: ContactInquiry) => {
