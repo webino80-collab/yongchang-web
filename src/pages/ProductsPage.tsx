@@ -13,12 +13,12 @@ import type { Product, ProductCategory, ProductSpecRow } from "@/types";
 
 /* ─── 폴백 (DB 비어 있을 때) ─── */
 const FALLBACK: Product[] = [
-  { id: "1", title_ko: "메조 니들", title_en: "MESO NEEDLES", desc_ko: "메조테라피용으로 특별히 설계된 초세밀 니들로 피부 층에 활성 성분을 정밀하게 전달합니다.", desc_en: "Ultra-fine needles specifically engineered for the precise intradermal delivery of active ingredients during mesotherapy.", image_url: null, gallery_urls: [], category: "needle", sort_order: 1, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
-  { id: "2", title_ko: "멀티니들", title_en: "MULTI NEEDLE", desc_ko: "초미세 가공 기술로 다중 핀 구성을 지원합니다.\n• 니들 길이 1.0mm ~ 4.0mm\n• 게이지 30G ~ 35G\n• PIN 2 / 3 / 4 구성", desc_en: "Multi-pin configuration with micro-precision engineering.\n• Needle length 1.0mm – 4.0mm\n• Gauge 30G – 35G\n• 2 / 3 / 4 pin options", image_url: null, gallery_urls: [], category: "needle", sort_order: 2, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
-  { id: "3", title_ko: "필러 캐뉼라", title_en: "FILLER CANNULA", desc_ko: "단일 진입점으로 넓은 영역에 정밀한 필러 전달이 가능하여 멍과 붓기를 크게 최소화합니다.", desc_en: "A single entry point allows for precise filler delivery across a wide area, significantly minimizing bruising and swelling.", image_url: null, gallery_urls: [], category: "cannula", sort_order: 3, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
-  { id: "4", title_ko: "OSG 캐뉼라", title_en: "OSG CANNULA", desc_ko: "조직 손상을 최소화하여 환자 통증을 경감하고 목표 층에 정확하고 안전하게 약물을 전달합니다.", desc_en: "Minimizes tissue trauma to alleviate patient pain, empowering clinicians to deliver medication accurately and safely.", image_url: null, gallery_urls: [], category: "cannula", sort_order: 4, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
-  { id: "5", title_ko: "척추 니들", title_en: "SPINAL NEEDLE", desc_ko: "척추 마취, 뇌척수액 채취 또는 진단 주사를 위해 지주막하 공간에 접근하도록 설계된 고정밀 니들입니다.", desc_en: "Thin, elongated, and high-precision needles specifically designed to access the subarachnoid space for spinal anesthesia.", image_url: null, gallery_urls: [], category: "anesthesia", sort_order: 5, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
-  { id: "6", title_ko: "경막외 니들", title_en: "EPIDURAL NEEDLE", desc_ko: "분만 또는 수술 후 통증 관리를 위해 경막외 공간에 삽입하는 두꺼운 벽의 강성 니들입니다.", desc_en: "A thick-walled, rigid needle designed for insertion into the epidural space for anesthesia or analgesia.", image_url: null, gallery_urls: [], category: "anesthesia", sort_order: 6, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "1", title_ko: "메조 니들", title_en: "MESO NEEDLES", desc_ko: "메조테라피용으로 특별히 설계된 초세밀 니들로 피부 층에 활성 성분을 정밀하게 전달합니다.", desc_en: "Ultra-fine needles specifically engineered for the precise intradermal delivery of active ingredients during mesotherapy.", image_url: null, gallery_urls: [], category: "needle", sort_order: 1, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "2", title_ko: "멀티니들", title_en: "MULTI NEEDLE", desc_ko: "초미세 가공 기술로 다중 핀 구성을 지원합니다.\n• 니들 길이 1.0mm ~ 4.0mm\n• 게이지 30G ~ 35G\n• PIN 2 / 3 / 4 구성", desc_en: "Multi-pin configuration with micro-precision engineering.\n• Needle length 1.0mm – 4.0mm\n• Gauge 30G – 35G\n• 2 / 3 / 4 pin options", image_url: null, gallery_urls: [], category: "needle", sort_order: 2, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "3", title_ko: "필러 캐뉼라", title_en: "FILLER CANNULA", desc_ko: "단일 진입점으로 넓은 영역에 정밀한 필러 전달이 가능하여 멍과 붓기를 크게 최소화합니다.", desc_en: "A single entry point allows for precise filler delivery across a wide area, significantly minimizing bruising and swelling.", image_url: null, gallery_urls: [], category: "cannula", sort_order: 3, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "4", title_ko: "OSG 캐뉼라", title_en: "OSG CANNULA", desc_ko: "조직 손상을 최소화하여 환자 통증을 경감하고 목표 층에 정확하고 안전하게 약물을 전달합니다.", desc_en: "Minimizes tissue trauma to alleviate patient pain, empowering clinicians to deliver medication accurately and safely.", image_url: null, gallery_urls: [], category: "cannula", sort_order: 4, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "5", title_ko: "척추 니들", title_en: "SPINAL NEEDLE", desc_ko: "척추 마취, 뇌척수액 채취 또는 진단 주사를 위해 지주막하 공간에 접근하도록 설계된 고정밀 니들입니다.", desc_en: "Thin, elongated, and high-precision needles specifically designed to access the subarachnoid space for spinal anesthesia.", image_url: null, gallery_urls: [], category: "anesthesia", sort_order: 5, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
+  { id: "6", title_ko: "경막외 니들", title_en: "EPIDURAL NEEDLE", desc_ko: "분만 또는 수술 후 통증 관리를 위해 경막외 공간에 삽입하는 두꺼운 벽의 강성 니들입니다.", desc_en: "A thick-walled, rigid needle designed for insertion into the epidural space for anesthesia or analgesia.", image_url: null, gallery_urls: [], category: "anesthesia", sort_order: 6, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, detail_image_url_ko: null, detail_image_url_en: null, spec_subtype: null, spec_rows: [] },
 ];
 
 type LandingCategoryKey = "needle" | "cannula" | "anesthesia" | "syringe";
@@ -780,7 +780,14 @@ export function ProductDetailPage() {
   const featureList =
     fromFeat.length >= 1 ? fromFeat : bullets.length >= 2 ? bullets : (lang === "ko" ? defaultBulletsKo : defaultBulletsEn);
 
-  const detailHtml = lang === "ko" ? product.detail_html_ko : product.detail_html_en;
+  const detailImageUrl = (lang === "ko" ? product.detail_image_url_ko : product.detail_image_url_en)?.trim() ?? "";
+  const detailHtmlLegacy = lang === "ko" ? product.detail_html_ko : product.detail_html_en;
+  const detailHtmlTrimmed = detailHtmlLegacy?.trim() ?? "";
+  const detailLegacyBareUrl =
+    detailHtmlTrimmed.length > 0 &&
+    /^https?:\/\//i.test(detailHtmlTrimmed) &&
+    !/[<>]/.test(detailHtmlTrimmed);
+  const showDetailBlock = !!(detailImageUrl || detailHtmlTrimmed);
 
   const specRowsForTable: ProductSpecRow[] =
     product.spec_rows.length > 0
@@ -905,18 +912,40 @@ export function ProductDetailPage() {
           </Link>
         </div>
 
-        {detailHtml?.trim() ? (
+        {showDetailBlock ? (
           <div
-            className="col-span-1 w-full lg:col-span-2 product-detail-html text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
+            className="col-span-1 w-full lg:col-span-2 text-center"
             style={{
-              fontSize: "1.45rem",
-              lineHeight: 1.75,
-              color: "#444",
               marginTop: "clamp(2rem, 4vw, 3rem)",
               marginBottom: "clamp(1rem, 3vw, 2rem)",
             }}
-            dangerouslySetInnerHTML={{ __html: detailHtml }}
-          />
+          >
+            {detailImageUrl ? (
+              <img
+                src={detailImageUrl}
+                alt=""
+                loading="lazy"
+                className="mx-auto block h-auto max-w-full rounded-lg"
+              />
+            ) : detailLegacyBareUrl ? (
+              <img
+                src={detailHtmlTrimmed}
+                alt=""
+                loading="lazy"
+                className="mx-auto block h-auto max-w-full rounded-lg"
+              />
+            ) : (
+              <div
+                className="product-detail-html text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
+                style={{
+                  fontSize: "1.45rem",
+                  lineHeight: 1.75,
+                  color: "#444",
+                }}
+                dangerouslySetInnerHTML={{ __html: detailHtmlLegacy ?? "" }}
+              />
+            )}
+          </div>
         ) : null}
 
         {/* 규격 표 */}

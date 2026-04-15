@@ -87,6 +87,8 @@ function mapProductRow(row: Product): Product {
     features_en: normalizeFeaturesTuple(r.features_en),
     detail_html_ko: (r.detail_html_ko as string) ?? null,
     detail_html_en: (r.detail_html_en as string) ?? null,
+    detail_image_url_ko: (r.detail_image_url_ko as string) ?? null,
+    detail_image_url_en: (r.detail_image_url_en as string) ?? null,
     spec_subtype: normalizeSpecSubtype((r.spec_subtype as string) ?? null),
     spec_rows: normalizeSpecRows(r.spec_rows),
     spec_gcc_plus_intro_ko: (r.spec_gcc_plus_intro_ko as string) ?? null,

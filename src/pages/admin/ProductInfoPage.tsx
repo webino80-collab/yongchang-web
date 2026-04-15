@@ -33,7 +33,7 @@ function saveFailureHint(detail: string): string | null {
     t.includes("pgrst204") ||
     (t.includes("column") && t.includes("schema"))
   ) {
-    return "원격 DB에 컬럼이 아직 없을 때 납니다. Supabase → SQL Editor에서 supabase/migrations/015_products_gallery_and_admin_form_bundle.sql 파일 전체를 한 번 실행하면 gallery_urls와 제품 폼 확장 컬럼이 함께 추가됩니다. (또는 012 → 014를 순서대로 실행)";
+    return "원격 DB에 컬럼이 아직 없을 때 납니다. Supabase → SQL Editor에서 supabase/migrations/015_products_gallery_and_admin_form_bundle.sql(또는 012→014) 및 상세 이미지용 024_products_detail_image_urls.sql을 실행했는지 확인하세요.";
   }
   if (
     t.includes("permission denied") ||
@@ -70,6 +70,8 @@ const EMPTY_FORM: ProductForm = {
   features_en: [...FE0],
   detail_html_ko: null,
   detail_html_en: null,
+  detail_image_url_ko: "",
+  detail_image_url_en: "",
   spec_subtype: "gcl",
   spec_rows: [],
   spec_gcc_plus_intro_ko: null,
@@ -94,8 +96,12 @@ function formFromProduct(p: Product): ProductForm {
     summary_en: p.summary_en ?? p.desc_en ?? "",
     features_ko: [...p.features_ko],
     features_en: [...p.features_en],
-    detail_html_ko: p.detail_html_ko ?? "",
-    detail_html_en: p.detail_html_en ?? "",
+    detail_html_ko: null,
+    detail_html_en: null,
+    detail_image_url_ko:
+      p.detail_image_url_ko?.trim() || extractDetailImageFromLegacy(p.detail_html_ko) || "",
+    detail_image_url_en:
+      p.detail_image_url_en?.trim() || extractDetailImageFromLegacy(p.detail_html_en) || "",
     spec_subtype: p.spec_subtype ?? "gcl",
     spec_rows: p.spec_rows.length ? p.spec_rows.map((r) => ({ ...r })) : [],
     spec_gcc_plus_intro_ko: p.spec_gcc_plus_intro_ko ?? null,
@@ -126,36 +132,23 @@ function FormSection({ title, children }: { title: string; children: ReactNode }
   );
 }
 
-function escapeHtmlAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;")
-    .replace(/</g, "&lt;");
-}
-
-/** Storage 업로드 URL을 상세 HTML에 삽입할 때 사용 (반응형 이미지) */
-function detailHtmlImageSnippet(publicUrl: string): string {
-  const src = escapeHtmlAttr(publicUrl.trim());
-  return `<p><img src="${src}" alt="" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;display:block" /></p>\n`;
+/** 기존 detail_html(단일 URL 또는 첫 img)에서 상세 이미지 URL 추출 */
+function extractDetailImageFromLegacy(htmlOrUrl: string | null | undefined): string {
+  const s = String(htmlOrUrl ?? "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s) && !/[<>]/.test(s)) return s;
+  const m = s.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return (m?.[1] ?? "").trim();
 }
 
 type DetailLang = "ko" | "en";
-
-type SelRange = { start: number; end: number };
 
 export function ProductInfoPage() {
   const queryClient = useQueryClient();
   const slotFileRef = useRef<HTMLInputElement>(null);
   const pendingSlotIndex = useRef<number>(0);
-  const detailHtmlImgInputRef = useRef<HTMLInputElement>(null);
-  const detailHtmlKoRef = useRef<HTMLTextAreaElement>(null);
-  const detailHtmlEnRef = useRef<HTMLTextAreaElement>(null);
-  const pendingDetailLang = useRef<DetailLang>("ko");
-  const detailSelRef = useRef<{ ko: SelRange; en: SelRange }>({
-    ko: { start: 0, end: 0 },
-    en: { start: 0, end: 0 },
-  });
+  const detailImageInputRef = useRef<HTMLInputElement>(null);
+  const pendingDetailImageLang = useRef<DetailLang>("ko");
 
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
@@ -222,8 +215,10 @@ export function ProductInfoPage() {
       desc_en: sumEn || String(f.desc_en ?? "").trim() || null,
       features_ko: normalizeFeaturesTuple(f.features_ko),
       features_en: normalizeFeaturesTuple(f.features_en),
-      detail_html_ko: String(f.detail_html_ko ?? "").trim() || null,
-      detail_html_en: String(f.detail_html_en ?? "").trim() || null,
+      detail_image_url_ko: String(f.detail_image_url_ko ?? "").trim() || null,
+      detail_image_url_en: String(f.detail_image_url_en ?? "").trim() || null,
+      detail_html_ko: null,
+      detail_html_en: null,
       spec_subtype: normalizeSpecSubtype(f.spec_subtype),
       spec_rows: f.spec_rows,
     };
@@ -302,54 +297,32 @@ export function ProductInfoPage() {
     }
   }
 
-  function captureDetailSelection(lang: DetailLang) {
-    const ta = lang === "ko" ? detailHtmlKoRef.current : detailHtmlEnRef.current;
-    if (!ta) return;
-    detailSelRef.current[lang] = { start: ta.selectionStart, end: ta.selectionEnd };
+  function openDetailImagePicker(lang: DetailLang) {
+    pendingDetailImageLang.current = lang;
+    detailImageInputRef.current?.click();
   }
 
-  function onDetailImgPickMouseDown(lang: DetailLang, e: React.MouseEvent) {
-    e.preventDefault();
-    pendingDetailLang.current = lang;
-    captureDetailSelection(lang);
-  }
-
-  function openDetailHtmlImagePicker(lang: DetailLang) {
-    pendingDetailLang.current = lang;
-    detailHtmlImgInputRef.current?.click();
-  }
-
-  async function handleDetailHtmlImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDetailImageFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    const lang = pendingDetailLang.current;
+    const lang = pendingDetailImageLang.current;
     e.target.value = "";
     if (!file) return;
     setDetailImgUploading(lang);
     try {
       const url = await productInfoService.uploadImage(file);
-      const snippet = detailHtmlImageSnippet(url);
-      const key = lang === "ko" ? "detail_html_ko" : "detail_html_en";
-      const { start, end } = detailSelRef.current[lang];
-      setForm((f) => {
-        const cur = String(f[key as "detail_html_ko" | "detail_html_en"] ?? "");
-        const next = cur.slice(0, start) + snippet + cur.slice(end);
-        return { ...f, [key]: next };
-      });
-      const ta = lang === "ko" ? detailHtmlKoRef.current : detailHtmlEnRef.current;
-      const insAt = start + snippet.length;
-      requestAnimationFrame(() => {
-        if (ta) {
-          ta.focus();
-          ta.setSelectionRange(insAt, insAt);
-        }
-        detailSelRef.current[lang] = { start: insAt, end: insAt };
-      });
+      const key = lang === "ko" ? "detail_image_url_ko" : "detail_image_url_en";
+      setForm((f) => ({ ...f, [key]: url }));
     } catch (err) {
       console.error(err);
       alert(`상세 이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setDetailImgUploading(null);
     }
+  }
+
+  function clearDetailImage(lang: DetailLang) {
+    const key = lang === "ko" ? "detail_image_url_ko" : "detail_image_url_en";
+    setForm((f) => ({ ...f, [key]: "" }));
   }
 
   function openSlotPicker(i: number) {
@@ -667,67 +640,80 @@ export function ProductInfoPage() {
               </label>
           </FormSection>
 
-          <FormSection title="상세 정보">
+          <FormSection title="상세이미지등록">
               <input
-                ref={detailHtmlImgInputRef}
+                ref={detailImageInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={handleDetailHtmlImageFile}
+                onChange={handleDetailImageFile}
               />
-              <p className="text-xs text-gray-500 mb-3">
-                HTML 태그를 직접 입력할 수 있습니다. <strong>이미지 업로드</strong>를 누르면 Storage에 올린 뒤{" "}
-                <code className="rounded bg-gray-100 px-1">&lt;img&gt;</code> 태그가 커서 위치에 삽입됩니다. 이미지 가로는{" "}
-                <strong>1200px 이하</strong>를 권장합니다.
+              <p className="text-xs text-gray-500 mb-4">
+                제품 문의 버튼 아래·규격 표 위에 노출됩니다. 사이트 언어에 따라 국문 또는 영문 이미지가 보입니다. 가로{" "}
+                <strong>1200px 이하</strong> PNG·JPG를 권장합니다.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label className="block text-sm font-medium text-gray-700">제품 상세설명 (국문) HTML</label>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+                  <p className="text-sm font-medium text-gray-800 mb-3">국문 이미지</p>
+                  <div className="mb-3 flex min-h-[160px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-white p-3">
+                    {form.detail_image_url_ko?.trim() ? (
+                      <RemoteImagePreview
+                        url={form.detail_image_url_ko}
+                        className="max-h-56 max-w-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-400">등록된 이미지 없음</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      className="btn btn-secondary btn-sm shrink-0"
+                      className="btn btn-secondary btn-sm"
                       disabled={detailImgUploading !== null || uploading}
-                      onMouseDown={(e) => onDetailImgPickMouseDown("ko", e)}
-                      onClick={() => openDetailHtmlImagePicker("ko")}
+                      onClick={() => openDetailImagePicker("ko")}
                     >
-                      {detailImgUploading === "ko" ? "업로드 중…" : "이미지 업로드"}
+                      {detailImgUploading === "ko" ? "업로드 중…" : "이미지 올리기"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm text-gray-600"
+                      disabled={!form.detail_image_url_ko?.trim()}
+                      onClick={() => clearDetailImage("ko")}
+                    >
+                      제거
                     </button>
                   </div>
-                  <textarea
-                    ref={detailHtmlKoRef}
-                    className="input w-full h-64 resize-y font-mono text-xs leading-relaxed"
-                    value={form.detail_html_ko ?? ""}
-                    onChange={(e) => setForm((p) => ({ ...p, detail_html_ko: e.target.value }))}
-                    onSelect={() => captureDetailSelection("ko")}
-                    onKeyUp={() => captureDetailSelection("ko")}
-                    onClick={() => captureDetailSelection("ko")}
-                    placeholder="<p>...</p>"
-                  />
                 </div>
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label className="block text-sm font-medium text-gray-700">제품 상세설명 (영문) HTML</label>
+                <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+                  <p className="text-sm font-medium text-gray-800 mb-3">영문 이미지</p>
+                  <div className="mb-3 flex min-h-[160px] items-center justify-center rounded-md border border-dashed border-gray-300 bg-white p-3">
+                    {form.detail_image_url_en?.trim() ? (
+                      <RemoteImagePreview
+                        url={form.detail_image_url_en}
+                        className="max-h-56 max-w-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-400">등록된 이미지 없음</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      className="btn btn-secondary btn-sm shrink-0"
+                      className="btn btn-secondary btn-sm"
                       disabled={detailImgUploading !== null || uploading}
-                      onMouseDown={(e) => onDetailImgPickMouseDown("en", e)}
-                      onClick={() => openDetailHtmlImagePicker("en")}
+                      onClick={() => openDetailImagePicker("en")}
                     >
-                      {detailImgUploading === "en" ? "업로드 중…" : "이미지 업로드"}
+                      {detailImgUploading === "en" ? "업로드 중…" : "이미지 올리기"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm text-gray-600"
+                      disabled={!form.detail_image_url_en?.trim()}
+                      onClick={() => clearDetailImage("en")}
+                    >
+                      제거
                     </button>
                   </div>
-                  <textarea
-                    ref={detailHtmlEnRef}
-                    className="input w-full h-64 resize-y font-mono text-xs leading-relaxed"
-                    value={form.detail_html_en ?? ""}
-                    onChange={(e) => setForm((p) => ({ ...p, detail_html_en: e.target.value }))}
-                    onSelect={() => captureDetailSelection("en")}
-                    onKeyUp={() => captureDetailSelection("en")}
-                    onClick={() => captureDetailSelection("en")}
-                    placeholder="<p>...</p>"
-                  />
                 </div>
               </div>
           </FormSection>
