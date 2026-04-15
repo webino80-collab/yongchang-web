@@ -85,6 +85,14 @@ export const contactService = {
       .update({ reply_content: replyContent, replied_at: new Date().toISOString(), is_read: true })
       .eq("id", id);
     if (error) throw error;
+
+    const { error: fnError } = await supabase.functions.invoke("send-inquiry-reply", {
+      body: { inquiry_id: id, reply_content: replyContent },
+    });
+    if (fnError) {
+      console.error("send-inquiry-reply invoke:", fnError);
+      throw fnError;
+    }
   },
 
   async deleteInquiry(id: string) {

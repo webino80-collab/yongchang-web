@@ -6,3 +6,7 @@ verify_jwt = false
 
 [functions.keep-alive]
 verify_jwt = false
+
+# 관리자 세션(JWT)으로만 호출 — 문의자에게 답변 메일 발송
+[functions.send-inquiry-reply]
+verify_jwt = true

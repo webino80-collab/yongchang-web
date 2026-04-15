@@ -98,3 +98,52 @@ export async function sendContactInquiryViaSmtp(record: ContactInquiryRecord): P
     }
   }
 }
+
+/** 임의 수신자에게 HTML 메일 (문의 답변 알림 등) */
+export async function sendHtmlToAddressViaSmtp(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+}): Promise<void> {
+  const host = Deno.env.get("SMTP_HOST")?.trim() || "smtp.daum.net";
+  const port = Number(Deno.env.get("SMTP_PORT")?.trim() || "465");
+  const startTls = Deno.env.get("SMTP_STARTTLS") === "1";
+  const user = Deno.env.get("SMTP_USER")?.trim();
+  const pass = Deno.env.get("SMTP_PASS")?.trim();
+  const fromAddr = (Deno.env.get("SMTP_FROM")?.trim() || user || "").trim();
+  const siteName = Deno.env.get("SITE_NAME")?.trim() || "(주)용창";
+
+  if (!user || !pass || !fromAddr) {
+    throw new Error("SMTP_USER, SMTP_PASS, SMTP_FROM(또는 SMTP_USER) Secret 이 필요합니다.");
+  }
+
+  const implicitTls = port === 465 && !startTls;
+
+  const client = new SMTPClient({
+    connection: {
+      hostname: host,
+      port,
+      tls: implicitTls,
+      auth: { username: user, password: pass },
+    },
+  });
+
+  try {
+    await client.send({
+      from: `${siteName} <${fromAddr}>`,
+      to: opts.to,
+      replyTo: opts.replyTo,
+      subject: opts.subject,
+      content: opts.text,
+      html: opts.html,
+    });
+  } finally {
+    try {
+      await client.close();
+    } catch {
+      /* ignore */
+    }
+  }
+}
