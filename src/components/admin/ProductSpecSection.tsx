@@ -8,7 +8,11 @@ import {
   specColumnsForSubtype,
 } from "@/lib/productSpecLayouts";
 
-export type ProductForm = Omit<Product, "id" | "created_at">;
+export type ProductForm = Omit<Product, "id" | "created_at"> & {
+  /** 관리자 전용: 저장 시 `detail_html_*` 한 블록으로 직렬화 (DB 추가 컬럼 불필요) */
+  detail_image_url_ko: string;
+  detail_image_url_en: string;
+};
 
 type Props = {
   form: ProductForm;

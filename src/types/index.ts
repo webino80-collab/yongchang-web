@@ -201,14 +201,9 @@ export interface Product {
   /** 특징 5줄 (운영 폼과 동일, 길이 5 권장) */
   features_ko: string[];
   features_en: string[];
-  /** @deprecated 신규는 detail_image_url_* 사용. 기존 HTML만 있는 제품 호환용 */
+  /** 제품 문의 아래·스펙 위 상세 (관리자 상세이미지는 단일 이미지용 HTML로 저장) */
   detail_html_ko: string | null;
-  /** @deprecated 신규는 detail_image_url_* 사용 */
   detail_html_en: string | null;
-  /** 제품 문의 아래·스펙 위 상세 이미지 (국문) */
-  detail_image_url_ko: string | null;
-  /** 제품 문의 아래·스펙 위 상세 이미지 (영문) */
-  detail_image_url_en: string | null;
   spec_subtype: string | null;
   spec_rows: ProductSpecRow[];
   /** GCC+ 상단 안내 (국문) */

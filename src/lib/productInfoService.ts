@@ -54,6 +54,30 @@ export function normalizeFeaturesTuple(raw: unknown): string[] {
   return [0, 1, 2, 3, 4].map((i) => a[i] ?? "");
 }
 
+function escapeHtmlAttr(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;");
+}
+
+/** `detail_html`에서 첫 `<img src>` 또는 URL만 저장된 값 추출 */
+export function extractProductDetailImageUrl(htmlOrUrl: string | null | undefined): string {
+  const t = String(htmlOrUrl ?? "").trim();
+  if (!t) return "";
+  if (/^https?:\/\//i.test(t) && !/[<>]/.test(t)) return t;
+  const m = t.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return (m?.[1] ?? "").trim();
+}
+
+/** 상세이미지등록 폼 값 → DB `detail_html_*` (단일 이미지 블록) */
+export function encodeProductDetailImageHtml(imageUrl: string | null | undefined): string | null {
+  const u = String(imageUrl ?? "").trim();
+  if (!u) return null;
+  return `<p><img src="${escapeHtmlAttr(u)}" alt="" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;display:block" /></p>`;
+}
+
 export function normalizeSpecRows(raw: unknown): ProductSpecRow[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -87,8 +111,6 @@ function mapProductRow(row: Product): Product {
     features_en: normalizeFeaturesTuple(r.features_en),
     detail_html_ko: (r.detail_html_ko as string) ?? null,
     detail_html_en: (r.detail_html_en as string) ?? null,
-    detail_image_url_ko: (r.detail_image_url_ko as string) ?? null,
-    detail_image_url_en: (r.detail_image_url_en as string) ?? null,
     spec_subtype: normalizeSpecSubtype((r.spec_subtype as string) ?? null),
     spec_rows: normalizeSpecRows(r.spec_rows),
     spec_gcc_plus_intro_ko: (r.spec_gcc_plus_intro_ko as string) ?? null,

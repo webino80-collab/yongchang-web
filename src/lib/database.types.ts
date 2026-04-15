@@ -384,8 +384,6 @@ export type Database = {
           features_en: string[];
           detail_html_ko: string | null;
           detail_html_en: string | null;
-          detail_image_url_ko: string | null;
-          detail_image_url_en: string | null;
           spec_subtype: string | null;
           spec_rows: Record<string, unknown>[];
           spec_gcc_plus_intro_ko: string | null;
@@ -412,8 +410,6 @@ export type Database = {
           features_en?: string[];
           detail_html_ko?: string | null;
           detail_html_en?: string | null;
-          detail_image_url_ko?: string | null;
-          detail_image_url_en?: string | null;
           spec_subtype?: string | null;
           spec_rows?: Record<string, unknown>[];
           spec_gcc_plus_intro_ko?: string | null;
@@ -438,8 +434,6 @@ export type Database = {
           features_en?: string[];
           detail_html_ko?: string | null;
           detail_html_en?: string | null;
-          detail_image_url_ko?: string | null;
-          detail_image_url_en?: string | null;
           spec_subtype?: string | null;
           spec_rows?: Record<string, unknown>[];
           spec_gcc_plus_intro_ko?: string | null;

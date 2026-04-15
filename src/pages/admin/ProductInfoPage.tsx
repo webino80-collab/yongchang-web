@@ -7,6 +7,8 @@ import {
   productTo5Slots,
   slots5ToLegacy,
   normalizeFeaturesTuple,
+  extractProductDetailImageUrl,
+  encodeProductDetailImageHtml,
 } from "@/lib/productInfoService";
 import { productCategoryService, headlineForSlug, staticFallbackProductCategories } from "@/lib/productCategoryService";
 import { normalizeSpecSubtype } from "@/lib/productSpecLayouts";
@@ -33,7 +35,7 @@ function saveFailureHint(detail: string): string | null {
     t.includes("pgrst204") ||
     (t.includes("column") && t.includes("schema"))
   ) {
-    return "원격 DB에 컬럼이 아직 없을 때 납니다. Supabase → SQL Editor에서 supabase/migrations/015_products_gallery_and_admin_form_bundle.sql(또는 012→014) 및 상세 이미지용 024_products_detail_image_urls.sql을 실행했는지 확인하세요.";
+    return "원격 DB에 컬럼이 아직 없을 때 납니다. Supabase → SQL Editor에서 supabase/migrations/015_products_gallery_and_admin_form_bundle.sql 파일 전체를 한 번 실행하면 gallery_urls와 제품 폼 확장 컬럼이 함께 추가됩니다. (또는 012 → 014를 순서대로 실행)";
   }
   if (
     t.includes("permission denied") ||
@@ -98,10 +100,8 @@ function formFromProduct(p: Product): ProductForm {
     features_en: [...p.features_en],
     detail_html_ko: null,
     detail_html_en: null,
-    detail_image_url_ko:
-      p.detail_image_url_ko?.trim() || extractDetailImageFromLegacy(p.detail_html_ko) || "",
-    detail_image_url_en:
-      p.detail_image_url_en?.trim() || extractDetailImageFromLegacy(p.detail_html_en) || "",
+    detail_image_url_ko: extractProductDetailImageUrl(p.detail_html_ko) || "",
+    detail_image_url_en: extractProductDetailImageUrl(p.detail_html_en) || "",
     spec_subtype: p.spec_subtype ?? "gcl",
     spec_rows: p.spec_rows.length ? p.spec_rows.map((r) => ({ ...r })) : [],
     spec_gcc_plus_intro_ko: p.spec_gcc_plus_intro_ko ?? null,
@@ -130,15 +130,6 @@ function FormSection({ title, children }: { title: string; children: ReactNode }
       {children}
     </section>
   );
-}
-
-/** 기존 detail_html(단일 URL 또는 첫 img)에서 상세 이미지 URL 추출 */
-function extractDetailImageFromLegacy(htmlOrUrl: string | null | undefined): string {
-  const s = String(htmlOrUrl ?? "").trim();
-  if (!s) return "";
-  if (/^https?:\/\//i.test(s) && !/[<>]/.test(s)) return s;
-  const m = s.match(/<img[^>]+src=["']([^"']+)["']/i);
-  return (m?.[1] ?? "").trim();
 }
 
 type DetailLang = "ko" | "en";
@@ -203,8 +194,9 @@ export function ProductInfoPage() {
   function toPayload(f: ProductForm): Omit<Product, "id" | "created_at"> {
     const sumKo = String(f.summary_ko ?? "").trim();
     const sumEn = String(f.summary_en ?? "").trim();
+    const { detail_image_url_ko, detail_image_url_en, ...rest } = f;
     return {
-      ...f,
+      ...rest,
       image_url: String(f.image_url ?? "").trim() || null,
       gallery_urls: f.gallery_urls.map((s) => s.trim()).filter(Boolean),
       subtitle_ko: String(f.subtitle_ko ?? "").trim() || null,
@@ -215,10 +207,8 @@ export function ProductInfoPage() {
       desc_en: sumEn || String(f.desc_en ?? "").trim() || null,
       features_ko: normalizeFeaturesTuple(f.features_ko),
       features_en: normalizeFeaturesTuple(f.features_en),
-      detail_image_url_ko: String(f.detail_image_url_ko ?? "").trim() || null,
-      detail_image_url_en: String(f.detail_image_url_en ?? "").trim() || null,
-      detail_html_ko: null,
-      detail_html_en: null,
+      detail_html_ko: encodeProductDetailImageHtml(detail_image_url_ko),
+      detail_html_en: encodeProductDetailImageHtml(detail_image_url_en),
       spec_subtype: normalizeSpecSubtype(f.spec_subtype),
       spec_rows: f.spec_rows,
     };
