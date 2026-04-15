@@ -1,0 +1,15 @@
+# Email Routing이 켜진 도메인에서 발신 주소를 사용하세요.
+# destination_address 없음 = Email Routing에 검증된 수신 주소로만 발송 가능(스팸 방지 정책).
+# 배포: cd workers/transactional-mail && npm i && npx wrangler secret put MAIL_WORKER_SECRET
+name = "yongchang-transactional-mail"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+[vars]
+FROM_ADDR = "no-reply@yongchang.co.kr"
+FROM_NAME = "(주)용창"
+
+# 발신 주소 제한(권장). FROM_ADDR 과 동일하게 맞추세요.
+[[send_email]]
+name = "MAIL"
+allowed_sender_addresses = ["no-reply@yongchang.co.kr"]

@@ -12,6 +12,7 @@ import {
 const schema = z.object({
   name:         z.string().min(1, "이름을 입력하세요").max(50),
   email:        z.string().email("올바른 이메일 주소를 입력하세요"),
+  phone:        z.string().max(40, "연락처는 40자 이내로 입력하세요").optional(),
   inquiry_type: z.string().min(1, "문의 유형을 선택하세요"),
   subject:      z.string().min(1, "제목을 입력하세요").max(100),
   message:      z.string().min(10, "내용을 10자 이상 입력하세요").max(1300),
@@ -69,7 +70,7 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { privacy: undefined as unknown as true, website: "" },
+    defaultValues: { privacy: undefined as unknown as true, website: "", phone: "" },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -77,6 +78,7 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
       await contactService.submit({
         name:    data.name,
         email:   data.email,
+        phone:   data.phone?.trim() || undefined,
         subject: `[${data.inquiry_type}] ${data.subject}`,
         message: data.message,
         hp:      data.website ?? "",
@@ -320,6 +322,16 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
             />
           </Field>
         </div>
+
+        <Field label={lang === "ko" ? "연락처" : "Phone"} error={errors.phone?.message}>
+          <input
+            type="text"
+            autoComplete="tel"
+            placeholder={lang === "ko" ? "전화번호 (선택)" : "Phone (optional)"}
+            className="contact-input"
+            {...register("phone")}
+          />
+        </Field>
 
         {/* 문의유형 + 제목 */}
         <div className="contact-name-grid">

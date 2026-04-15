@@ -4,7 +4,8 @@
  * 현재 그누보드: bbs/write_update_mail.php 대체
  *
  * 환경변수:
- *   RESEND_API_KEY, ADMIN_EMAIL, SITE_NAME, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *   MAIL_WORKER_URL, MAIL_WORKER_SECRET, SITE_NAME, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *   (Cloudflare Workers transactional-mail 발송 API)
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -36,12 +37,12 @@ serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const adminEmail = Deno.env.get("ADMIN_EMAIL") ?? "admin@example.com";
+    const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.replace(/\/$/, "");
+    const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET");
     const siteName = Deno.env.get("SITE_NAME") ?? "사이트";
 
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not set");
+    if (!mailWorkerUrl || !mailWorkerSecret) {
+      console.error("MAIL_WORKER_URL or MAIL_WORKER_SECRET not set");
       return new Response("Mail config missing", { status: 500 });
     }
 
@@ -83,19 +84,24 @@ serve(async (req: Request) => {
       <p style="color:#888;font-size:12px;">이 메일은 자동으로 발송됩니다.</p>
     `;
 
-    await fetch("https://api.resend.com/emails", {
+    const mailRes = await fetch(mailWorkerUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${mailWorkerSecret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${siteName} <noreply@${adminEmail.split("@")[1]}>`,
-        to: [authorData.user.email],
+        to: authorData.user.email,
         subject: `[${siteName}] 내 글에 답글이 달렸습니다.`,
         html: emailHtml,
       }),
     });
+
+    if (!mailRes.ok) {
+      const t = await mailRes.text();
+      console.error("mail worker failed:", mailRes.status, t);
+      return new Response("Mail send failed", { status: 502 });
+    }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (err) {

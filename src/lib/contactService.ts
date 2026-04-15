@@ -3,8 +3,10 @@ import type { ContactInquiry } from "@/types";
 
 export const contactService = {
   /**
-   * 문의 저장 후 메일은 Supabase Database Webhook → Edge Function `send-contact-mail`에서
-   * SMTP(다음 등) 또는 선택적 Cloudflare Worker로 발송합니다.
+   * 1) `contact_inquiries`에 저장
+   * 2) 저장 직후 Edge Function `send-contact-mail` 호출 → Cloudflare `MAIL_WORKER`(send_email)로 관리자 알림
+   *
+   * Database Webhook으로 동일 함수를 호출 중이면 메일이 두 번 갑니다. 웹훅을 끄거나 이 invoke 경로만 쓰세요.
    */
   async submit(payload: {
     name: string;
@@ -18,12 +20,28 @@ export const contactService = {
     const row = {
       name: payload.name,
       email: payload.email,
-      phone: payload.phone,
+      phone: payload.phone?.trim() || null,
       subject: payload.subject,
       message: payload.message,
     };
-    const { error } = await supabase.from("contact_inquiries").insert(row);
+
+    const { data, error } = await supabase
+      .from("contact_inquiries")
+      .insert(row)
+      .select()
+      .single();
+
     if (error) throw error;
+    if (!data) throw new Error("insert returned no row");
+
+    const { error: fnError } = await supabase.functions.invoke("send-contact-mail", {
+      body: { record: data },
+    });
+
+    if (fnError) {
+      console.error("send-contact-mail invoke:", fnError);
+      throw fnError;
+    }
   },
 
   // 관리자 전용

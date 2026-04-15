@@ -6,7 +6,8 @@
  * Supabase Auth Webhook 또는 Database Webhook (auth.users) 으로 호출
  *
  * 환경변수:
- *   RESEND_API_KEY, ADMIN_EMAIL, SITE_NAME, SITE_URL
+ *   MAIL_WORKER_URL, MAIL_WORKER_SECRET, ADMIN_EMAIL, SITE_NAME, SITE_URL
+ *   (Cloudflare Workers transactional-mail 발송 API)
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -36,13 +37,14 @@ serve(async (req: Request) => {
       });
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.replace(/\/$/, "");
+    const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET");
     const adminEmail = Deno.env.get("ADMIN_EMAIL") ?? "admin@example.com";
     const siteName = Deno.env.get("SITE_NAME") ?? "사이트";
     const siteUrl = Deno.env.get("SITE_URL") ?? "https://example.com";
 
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not set");
+    if (!mailWorkerUrl || !mailWorkerSecret) {
+      console.error("MAIL_WORKER_URL or MAIL_WORKER_SECRET not set");
       return new Response("Mail config missing", { status: 500 });
     }
 
@@ -68,35 +70,35 @@ serve(async (req: Request) => {
       </div>
     `;
 
-    // 회원 환영 메일
-    await fetch("https://api.resend.com/emails", {
+    const adminNotifyHtml = `<p>신규 회원이 가입했습니다.<br/>이메일: ${user.email}<br/>닉네임: ${nickname}</p>`;
+
+    const mailRes = await fetch(mailWorkerUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${mailWorkerSecret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${siteName} <noreply@${adminEmail.split("@")[1]}>`,
-        to: [user.email],
-        subject: `[${siteName}] 회원가입을 환영합니다!`,
-        html: emailHtml,
+        messages: [
+          {
+            to: user.email,
+            subject: `[${siteName}] 회원가입을 환영합니다!`,
+            html: emailHtml,
+          },
+          {
+            to: adminEmail,
+            subject: `[${siteName}] 신규 회원 가입: ${nickname}`,
+            html: adminNotifyHtml,
+          },
+        ],
       }),
     });
 
-    // 관리자 신규 회원 알림
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `${siteName} <noreply@${adminEmail.split("@")[1]}>`,
-        to: [adminEmail],
-        subject: `[${siteName}] 신규 회원 가입: ${nickname}`,
-        html: `<p>신규 회원이 가입했습니다.<br/>이메일: ${user.email}<br/>닉네임: ${nickname}</p>`,
-      }),
-    });
+    if (!mailRes.ok) {
+      const t = await mailRes.text();
+      console.error("mail worker failed:", mailRes.status, t);
+      return new Response("Mail send failed", { status: 502 });
+    }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (err) {
