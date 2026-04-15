@@ -147,6 +147,7 @@ export const productInfoService = {
       features_ko: normalizeFeaturesTuple(payload.features_ko),
       features_en: normalizeFeaturesTuple(payload.features_en),
       spec_rows: specRows as unknown as Record<string, unknown>[],
+      spec_subtype: normalizeSpecSubtype(payload.spec_subtype),
     };
     const { data, error } = await supabase.from("products").insert(body).select();
     if (error) throw error;
@@ -172,6 +173,9 @@ export const productInfoService = {
     }
     if (payload.spec_rows !== undefined) {
       body.spec_rows = normalizeSpecRows(payload.spec_rows) as unknown as Record<string, unknown>[];
+    }
+    if (payload.spec_subtype !== undefined) {
+      body.spec_subtype = normalizeSpecSubtype(payload.spec_subtype);
     }
     const { data, error } = await supabase.from("products").update(body as never).eq("id", id).select();
     if (error) throw error;

@@ -30,9 +30,11 @@ export const LEGACY_SPEC_SUBTYPE_MAP: Record<string, ProductSpecSubtype> = {
 };
 
 export function normalizeSpecSubtype(raw: string | null | undefined): ProductSpecSubtype {
-  const s = String(raw ?? "").trim();
-  if (LEGACY_SPEC_SUBTYPE_MAP[s]) return LEGACY_SPEC_SUBTYPE_MAP[s];
-  if (NEW_SUBTYPE_SET.has(s)) return s as ProductSpecSubtype;
+  const t = String(raw ?? "").trim();
+  const lower = t.toLowerCase();
+  if (LEGACY_SPEC_SUBTYPE_MAP[t]) return LEGACY_SPEC_SUBTYPE_MAP[t];
+  if (LEGACY_SPEC_SUBTYPE_MAP[lower]) return LEGACY_SPEC_SUBTYPE_MAP[lower];
+  if (NEW_SUBTYPE_SET.has(lower)) return lower as ProductSpecSubtype;
   return "gcl";
 }
 
