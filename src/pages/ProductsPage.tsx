@@ -857,7 +857,7 @@ export function ProductDetailPage() {
         <div className="grid grid-cols-1 items-start gap-[clamp(2rem,4vw,4rem)] pt-8 lg:grid-cols-2">
         <ProductGallery product={product} title={title ?? ""} />
 
-        {/* 본문(우측): 제목·요약 → 상세 HTML은 아래 전체 너비 → 특징·문의는 다시 갤러리 열과 맞춤 */}
+        {/* 본문(우측): 제목·요약 — 상세 HTML은 제품 문의 아래·스펙 표 위에서 전체 너비·가운데 정렬 */}
         <div style={{ marginTop: 50 }}>
           <h2 style={{ fontSize: "clamp(2rem, 2.2vw, 2.4rem)", fontWeight: 800, color: "#111", marginBottom: subtitle ? "0.5rem" : "1.2rem" }}>
             {title}
@@ -869,19 +869,6 @@ export function ProductDetailPage() {
             <p style={{ fontSize: "1.45rem", color: "#666", lineHeight: 1.75, marginBottom: "2rem" }}>{intro}</p>
           )}
         </div>
-
-        {detailHtml?.trim() ? (
-          <div
-            className="col-span-1 w-full lg:col-span-2 product-detail-html [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-6"
-            style={{
-              fontSize: "1.45rem",
-              lineHeight: 1.75,
-              color: "#444",
-              marginTop: "clamp(0.5rem, 2vw, 1.25rem)",
-            }}
-            dangerouslySetInnerHTML={{ __html: detailHtml }}
-          />
-        ) : null}
 
         <div
           className="col-span-1 mt-[clamp(1.25rem,3vw,2.5rem)] grid w-full grid-cols-1 gap-[clamp(2rem,4vw,4rem)] lg:col-span-2 lg:grid-cols-2"
@@ -924,6 +911,20 @@ export function ProductDetailPage() {
             </Link>
           </div>
         </div>
+
+        {detailHtml?.trim() ? (
+          <div
+            className="col-span-1 w-full lg:col-span-2 product-detail-html text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
+            style={{
+              fontSize: "1.45rem",
+              lineHeight: 1.75,
+              color: "#444",
+              marginTop: "clamp(2rem, 4vw, 3rem)",
+              marginBottom: "clamp(1rem, 3vw, 2rem)",
+            }}
+            dangerouslySetInnerHTML={{ __html: detailHtml }}
+          />
+        ) : null}
 
         {/* 규격 표 */}
         {(showStandardSpecTable || showGccBlock) && (
