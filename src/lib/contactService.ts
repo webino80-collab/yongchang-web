@@ -96,13 +96,11 @@ export const contactService = {
   },
 
   async deleteInquiry(id: string) {
-    // Returning: RLS로 0행 삭제 시에도 error 없이 성공할 수 있음 → 반환 행으로 검증
-    const { data, error } = await supabase.from("contact_inquiries").delete().eq("id", id).select("id");
+    // RPC: 테이블 DELETE RLS 누락·불일치여도 관리자면 실제 삭제 (027 delete_contact_inquiry)
+    const { data, error } = await supabase.rpc("delete_contact_inquiry", { p_id: id });
     if (error) throw error;
-    if (!data?.length) {
-      throw new Error(
-        "문의가 삭제되지 않았습니다. 관리자 권한을 확인하고, Supabase에 마이그레이션 026(문의 삭제 RLS)이 적용됐는지 확인하세요.",
-      );
+    if (data !== true) {
+      throw new Error("해당 문의를 찾을 수 없거나 이미 삭제되었습니다.");
     }
   },
 };

@@ -662,6 +662,10 @@ export type Database = {
           created_at: string;
         };
       };
+      delete_contact_inquiry: {
+        Args: { p_id: string };
+        Returns: boolean;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
