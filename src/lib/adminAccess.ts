@@ -10,6 +10,7 @@ export const LEVEL5_ADMIN_NAV_PATHS = [
   "/admin/about-timeline",
   "/admin/product-landing",
   "/admin/products",
+  "/admin/product-categories",
   "/admin/certificates",
   "/admin/brochures",
 ] as const;

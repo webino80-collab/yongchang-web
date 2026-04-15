@@ -20,6 +20,7 @@ import { DashboardPage } from "@/pages/admin/DashboardPage";
 import { VisualPage } from "@/pages/admin/VisualPage";
 import { HomeProductsPage } from "@/pages/admin/HomeProductsPage";
 import { ProductInfoPage } from "@/pages/admin/ProductInfoPage";
+import { ProductCategoriesAdminPage } from "@/pages/admin/ProductCategoriesAdminPage";
 import { CertificateAdminPage } from "@/pages/admin/CertificateAdminPage";
 import { BrochureAdminPage } from "@/pages/admin/BrochureAdminPage";
 import { PageBannerAdminPage } from "@/pages/admin/PageBannerAdminPage";
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="visual" element={<VisualPage />} />
         <Route path="home-products" element={<HomeProductsPage />} />
         <Route path="products" element={<ProductInfoPage />} />
+        <Route path="product-categories" element={<ProductCategoriesAdminPage />} />
         <Route path="certificates" element={<CertificateAdminPage />} />
         <Route path="brochures" element={<BrochureAdminPage />} />
         <Route path="page-banners" element={<PageBannerAdminPage />} />

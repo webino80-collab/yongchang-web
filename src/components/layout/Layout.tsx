@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLangStore } from "@/store/useLangStore";
 import { t, tr } from "@/i18n/translations";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { clsx } from "clsx";
+import { productCategoryService } from "@/lib/productCategoryService";
 
 /* 헤더 높이 — padding 4.6rem×2 + logo 2.8rem = 12rem = 120px (10px base) */
 const HEADER_H_PC     = 120;
@@ -25,6 +27,20 @@ export function Layout() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [langOpen,       setLangOpen]       = useState(false);
   const prevScrollY = useRef(0);
+
+  const { data: productNavCategories = [] } = useQuery({
+    queryKey: ["product-categories-public"],
+    queryFn: () => productCategoryService.getActive(),
+  });
+
+  const productNavChildren = useMemo(
+    () =>
+      productNavCategories.map((c) => ({
+        label: lang === "ko" ? c.label_ko : c.label_en,
+        to: `/board/product/browse?cat=${encodeURIComponent(c.slug)}`,
+      })),
+    [productNavCategories, lang]
+  );
 
   /* 스크롤 방향 감지 */
   useEffect(() => {
@@ -105,12 +121,7 @@ export function Layout() {
           <nav style={{ marginLeft: "clamp(2rem, 6vw, 8rem)", display: "flex", alignItems: "center", gap: "clamp(2.4rem, 3.5vw, 6.4rem)", flexShrink: 1, flexWrap: "nowrap" }}>
             {[
               { label: tr(t.nav.company, lang),  to: "/about" },
-              { label: tr(t.nav.product, lang),  to: "/board/product", children: [
-                { label: tr(t.nav.needle, lang),     to: "/board/product/browse?cat=needle" },
-                { label: tr(t.nav.cannula, lang),    to: "/board/product/browse?cat=cannula" },
-                { label: tr(t.nav.anesthesia, lang), to: "/board/product/browse?cat=anesthesia" },
-                { label: tr(t.nav.syringe, lang),    to: "/board/product/browse?cat=syringe" },
-              ]},
+              { label: tr(t.nav.product, lang),  to: "/board/product", children: productNavChildren },
               { label: tr(t.nav.cert, lang),     to: "/board/certificate" },
               { label: tr(t.nav.brochure, lang), to: "/board/brochure" },
               { label: tr(t.nav.contact, lang),  to: "/contact" },
@@ -387,12 +398,7 @@ export function Layout() {
               <div className="px-5 py-3 space-y-0.5">
                 {[
                   { label: tr(t.nav.company, lang),  to: "/about" },
-                  { label: tr(t.nav.product, lang),  to: "/board/product", children: [
-                    { label: tr(t.nav.needle, lang),     to: "/board/product/browse?cat=needle" },
-                    { label: tr(t.nav.cannula, lang),    to: "/board/product/browse?cat=cannula" },
-                    { label: tr(t.nav.anesthesia, lang), to: "/board/product/browse?cat=anesthesia" },
-                    { label: tr(t.nav.syringe, lang),    to: "/board/product/browse?cat=syringe" },
-                  ]},
+                  { label: tr(t.nav.product, lang),  to: "/board/product", children: productNavChildren },
                   { label: tr(t.nav.cert, lang),     to: "/board/certificate" },
                   { label: tr(t.nav.brochure, lang), to: "/board/brochure" },
                   { label: tr(t.nav.contact, lang),  to: "/contact" },

@@ -23,6 +23,7 @@ const navItems = [
   { to: "/admin/about-timeline", label: "About 연혁", icon: "📅" },
   { to: "/admin/product-landing", label: "제품 랜딩 카드", icon: "▦" },
   { to: "/admin/products",     label: "제품소개 관리",   icon: "💉" },
+  { to: "/admin/product-categories", label: "제품 분류", icon: "🏷️" },
   { to: "/admin/certificates", label: "특허·인증 관리",  icon: "📜" },
   { to: "/admin/brochures",    label: "브로셔 관리",     icon: "📂" },
   { to: "/admin/boards",       label: "게시판 관리",     icon: "📋" },

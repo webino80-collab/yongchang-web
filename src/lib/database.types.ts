@@ -433,6 +433,32 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_categories: {
+        Row: {
+          slug: string;
+          label_ko: string;
+          label_en: string;
+          sort_order: number;
+          is_active: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          slug: string;
+          label_ko: string;
+          label_en: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          label_ko?: string;
+          label_en?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       certificates: {
         Row: {
           id: string;

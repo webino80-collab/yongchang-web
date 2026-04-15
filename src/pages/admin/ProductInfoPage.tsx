@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   productInfoService,
-  PRODUCT_CATEGORIES,
   productDisplayImages,
   productTo5Slots,
   slots5ToLegacy,
   normalizeFeaturesTuple,
 } from "@/lib/productInfoService";
+import { productCategoryService, headlineForSlug, staticFallbackProductCategories } from "@/lib/productCategoryService";
 import { PageSpinner } from "@/components/ui/Spinner";
 import type { Product } from "@/types";
 import {
@@ -139,6 +140,21 @@ export function ProductInfoPage() {
     queryKey: ["admin-products"],
     queryFn: () => productInfoService.getAllProducts(),
   });
+
+  const { data: categoryRows = [] } = useQuery({
+    queryKey: ["product-categories-admin"],
+    queryFn: () => productCategoryService.getAllForAdmin(),
+  });
+
+  const categoryMetaList = useMemo(
+    () => (categoryRows.length ? categoryRows : staticFallbackProductCategories()),
+    [categoryRows]
+  );
+
+  const categoryOptionsForSelect = useMemo(
+    () => categoryMetaList.filter((r) => r.is_active || r.slug === form.category),
+    [categoryMetaList, form.category]
+  );
 
   const loadErrorMessage = isError
     ? error instanceof Error
@@ -323,7 +339,16 @@ export function ProductInfoPage() {
   return (
     <div className="w-full min-w-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">제품소개 관리</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">제품소개 관리</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            제품 분류(메뉴·필터 표시명)는{" "}
+            <Link to="/admin/product-categories" className="text-[#0f2d52] font-medium underline-offset-2 hover:underline">
+              제품 분류
+            </Link>
+            에서 수정합니다.
+          </p>
+        </div>
         {!showForm && (
           <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={() => setShowForm(true)}>
             + 제품 추가
@@ -385,9 +410,10 @@ export function ProductInfoPage() {
                   value={form.category}
                   onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
                 >
-                  {PRODUCT_CATEGORIES.filter((c) => c.value !== "all").map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.labelKo} ({c.labelEn})
+                  {categoryOptionsForSelect.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.label_ko} ({c.label_en})
+                      {!c.is_active ? " · 비활성" : ""}
                     </option>
                   ))}
                 </select>
@@ -767,7 +793,7 @@ export function ProductInfoPage() {
                   </td>
                   <td className="px-4 py-3 text-center hidden md:table-cell">
                     <span className="badge badge-blue text-xs">
-                      {PRODUCT_CATEGORIES.find((c) => c.value === p.category)?.labelKo ?? p.category}
+                      {headlineForSlug(p.category, "ko", categoryMetaList)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">

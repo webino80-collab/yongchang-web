@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { useLangStore } from "@/store/useLangStore";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { productInfoService, productDisplayImages } from "@/lib/productInfoService";
+import { productCategoryService, headlineForSlug } from "@/lib/productCategoryService";
 import { pageBannerService } from "@/lib/pageBannerService";
 import { productLandingService } from "@/lib/productLandingService";
-import type { Product, ProductSpecRow } from "@/types";
+import type { Product, ProductCategory, ProductSpecRow } from "@/types";
 
 /* ─── 폴백 (DB 비어 있을 때) ─── */
 const FALLBACK: Product[] = [
@@ -19,11 +20,10 @@ const FALLBACK: Product[] = [
   { id: "6", title_ko: "경막외 니들", title_en: "EPIDURAL NEEDLE", desc_ko: "분만 또는 수술 후 통증 관리를 위해 경막외 공간에 삽입하는 두꺼운 벽의 강성 니들입니다.", desc_en: "A thick-walled, rigid needle designed for insertion into the epidural space for anesthesia or analgesia.", image_url: null, gallery_urls: [], category: "anesthesia", sort_order: 6, is_active: true, created_at: "", subtitle_ko: null, subtitle_en: null, summary_ko: null, summary_en: null, features_ko: ["", "", "", "", ""], features_en: ["", "", "", "", ""], detail_html_ko: null, detail_html_en: null, spec_subtype: null, spec_rows: [] },
 ];
 
-const BROWSE_PILLS = ["all", "needle", "cannula", "anesthesia", "syringe"] as const;
-type BrowsePill = (typeof BROWSE_PILLS)[number];
+type LandingCategoryKey = "needle" | "cannula" | "anesthesia" | "syringe";
 
 const LANDING_GROUPS: {
-  category: Exclude<BrowsePill, "all">;
+  category: LandingCategoryKey;
   titleKo: string;
   titleEn: string;
   descKo: string;
@@ -34,13 +34,6 @@ const LANDING_GROUPS: {
   { category: "anesthesia", titleKo: "마취용 침", titleEn: "ANESTHESIA NEEDLE", descKo: "경막외투여용침, 척추마취용침.", descEn: "Epidural and spinal anesthesia needles." },
   { category: "syringe", titleKo: "주사기", titleEn: "SYRINGE", descKo: "주사기, 인슐린 주사기.", descEn: "Syringes and insulin syringes." },
 ];
-
-const CATEGORY_BANNER_TITLE: Record<Exclude<BrowsePill, "all">, { ko: string; en: string }> = {
-  needle: { ko: "NEEDLE", en: "NEEDLE" },
-  cannula: { ko: "캐뉼라", en: "CANNULA" },
-  anesthesia: { ko: "마취용 침", en: "ANESTHESIA" },
-  syringe: { ko: "주사기", en: "SYRINGE" },
-};
 
 const NEEDLE_SPEC_ROWS: { gauge: string; color: string; length: string; pin: string }[] = [
   { gauge: "30G", color: "#f4d03f", length: "1mm / 1.5mm / 2mm / 4mm", pin: "2Pin / 3Pin / 4Pin" },
@@ -93,23 +86,9 @@ function specPublicLastColumn(rows: ProductSpecRow[]): {
   };
 }
 
-function pillLabel(value: BrowsePill, lang: string): string {
-  if (value === "all") return "ALL";
-  const m: Record<Exclude<BrowsePill, "all">, { ko: string; en: string }> = {
-    needle: { ko: "NEEDLE", en: "NEEDLE" },
-    cannula: { ko: "캐뉼라", en: "CANNULA" },
-    anesthesia: { ko: "마취용 침", en: "ANESTHESIA" },
-    syringe: { ko: "주사기", en: "SYRINGE" },
-  };
-  return lang === "ko" ? m[value].ko : m[value].en;
-}
-
-function categoryHeadlineForProduct(category: string, lang: string): string {
-  const k = category as Exclude<BrowsePill, "all">;
-  if (CATEGORY_BANNER_TITLE[k]) {
-    return lang === "ko" ? CATEGORY_BANNER_TITLE[k].ko : CATEGORY_BANNER_TITLE[k].en;
-  }
-  return category.toUpperCase();
+function browsePillLabel(tab: string, lang: string, cats: ProductCategory[]): string {
+  if (tab === "all") return "ALL";
+  return headlineForSlug(tab, lang, cats);
 }
 
 /* ─── 브로셔와 동일한 상단 배너 ─── */
@@ -459,7 +438,15 @@ export function ProductsBrowsePage() {
   const { isMobile } = useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawCat = searchParams.get("cat") ?? "all";
-  const activeCat: BrowsePill = BROWSE_PILLS.includes(rawCat as BrowsePill) ? (rawCat as BrowsePill) : "all";
+
+  const { data: categoryRows = [] } = useQuery({
+    queryKey: ["product-categories-public"],
+    queryFn: () => productCategoryService.getActive(),
+  });
+
+  const browseTabs = useMemo(() => ["all", ...categoryRows.map((c) => c.slug)], [categoryRows]);
+  const activeCat =
+    rawCat === "all" || browseTabs.includes(rawCat) ? rawCat : "all";
 
   const { data: dbProducts } = useQuery({
     queryKey: ["products", "active"],
@@ -490,9 +477,7 @@ export function ProductsBrowsePage() {
   const headTitle =
     activeCat === "all"
       ? (lang === "ko" ? bannerTitleKo : bannerTitleEn)
-      : (lang === "ko"
-        ? CATEGORY_BANNER_TITLE[activeCat as Exclude<BrowsePill, "all">].ko
-        : CATEGORY_BANNER_TITLE[activeCat as Exclude<BrowsePill, "all">].en);
+      : headlineForSlug(activeCat, lang, categoryRows);
   const headSubtitle = lang === "ko" ? bannerSubKo : bannerSubEn;
 
   const sectionTitle = lang === "ko" ? "전체 제품" : "All Products";
@@ -526,7 +511,7 @@ export function ProductsBrowsePage() {
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.8rem", marginBottom: "3.2rem" }}>
-          {BROWSE_PILLS.map((value) => {
+          {browseTabs.map((value) => {
             const isActive = activeCat === value;
             return (
               <button
@@ -546,7 +531,7 @@ export function ProductsBrowsePage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {pillLabel(value, lang)}
+                {browsePillLabel(value, lang, categoryRows)}
               </button>
             );
           })}
@@ -756,6 +741,11 @@ export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const { data: categoryRows = [] } = useQuery({
+    queryKey: ["product-categories-public"],
+    queryFn: () => productCategoryService.getActive(),
+  });
+
   const { data: dbProduct, isPending } = useQuery({
     queryKey: ["product", id],
     queryFn: () => productInfoService.getProductById(id!),
@@ -824,7 +814,7 @@ export function ProductDetailPage() {
     : (["Gauge", "Color", "Length", specLast!.header] as const);
 
   const listHref = `/board/product/browse?cat=${encodeURIComponent(product.category)}`;
-  const catHeadline = categoryHeadlineForProduct(product.category, lang);
+  const catHeadline = headlineForSlug(product.category, lang, categoryRows);
 
   const taglineKo = "(주)용창의 한계를 뛰어넘는 초정밀 기술력으로 의료 현장의 해답이 되겠습니다.";
   const taglineEn = "With precision beyond limits, Yongchang supports every clinical challenge.";

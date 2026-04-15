@@ -88,7 +88,7 @@ export const PRODUCT_CATEGORIES = [
   { value: "all",        labelKo: "전체",     labelEn: "All" },
   { value: "needle",     labelKo: "니들",     labelEn: "Needle" },
   { value: "cannula",    labelKo: "캐뉼라",   labelEn: "Cannula" },
-  { value: "anesthesia", labelKo: "마취",     labelEn: "Anesthesia" },
+  { value: "anesthesia", labelKo: "천자침",   labelEn: "Puncture needle" },
   { value: "syringe",    labelKo: "주사기",   labelEn: "Syringe" },
   { value: "other",      labelKo: "기타",     labelEn: "Other" },
 ] as const;

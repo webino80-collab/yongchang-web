@@ -14,7 +14,7 @@ export const SPEC_SUBTYPE_OPTIONS = [
   { value: "meso", label: "메조" },
   { value: "sterile", label: "멸균" },
   { value: "pen", label: "펜니들" },
-  { value: "anesthesia", label: "마취" },
+  { value: "anesthesia", label: "천자침" },
   { value: "syringe", label: "주사기" },
   { value: "other", label: "기타" },
 ] as const;

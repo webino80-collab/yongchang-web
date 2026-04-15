@@ -187,6 +187,16 @@ export interface Product {
   spec_rows: ProductSpecRow[];
 }
 
+/** 제품 분류 — `products.category` 값과 `slug`가 동일 */
+export interface ProductCategory {
+  slug: string;
+  label_ko: string;
+  label_en: string;
+  sort_order: number;
+  is_active: boolean;
+  updated_at: string;
+}
+
 export interface Certificate {
   id: string;
   title_ko: string;
