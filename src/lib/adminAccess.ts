@@ -13,6 +13,7 @@ export const LEVEL5_ADMIN_NAV_PATHS = [
   "/admin/product-categories",
   "/admin/certificates",
   "/admin/brochures",
+  "/admin/inquiries",
 ] as const;
 
 const LEVEL5_PATH_SET = new Set<string>(LEVEL5_ADMIN_NAV_PATHS);
