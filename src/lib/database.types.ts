@@ -386,6 +386,9 @@ export type Database = {
           detail_html_en: string | null;
           spec_subtype: string | null;
           spec_rows: Record<string, unknown>[];
+          spec_gcc_plus_intro_ko: string | null;
+          spec_gcc_plus_intro_en: string | null;
+          spec_gcc_plus_tables: unknown | null;
         };
         Insert: {
           id?: string;
@@ -409,6 +412,9 @@ export type Database = {
           detail_html_en?: string | null;
           spec_subtype?: string | null;
           spec_rows?: Record<string, unknown>[];
+          spec_gcc_plus_intro_ko?: string | null;
+          spec_gcc_plus_intro_en?: string | null;
+          spec_gcc_plus_tables?: unknown | null;
         };
         Update: {
           title_ko?: string;
@@ -430,6 +436,9 @@ export type Database = {
           detail_html_en?: string | null;
           spec_subtype?: string | null;
           spec_rows?: Record<string, unknown>[];
+          spec_gcc_plus_intro_ko?: string | null;
+          spec_gcc_plus_intro_en?: string | null;
+          spec_gcc_plus_tables?: unknown | null;
         };
         Relationships: [];
       };

@@ -9,14 +9,11 @@ import {
   normalizeFeaturesTuple,
 } from "@/lib/productInfoService";
 import { productCategoryService, headlineForSlug, staticFallbackProductCategories } from "@/lib/productCategoryService";
+import { normalizeSpecSubtype } from "@/lib/productSpecLayouts";
 import { PageSpinner } from "@/components/ui/Spinner";
 import type { Product } from "@/types";
-import {
-  SPEC_TYPE_OPTIONS,
-  SPEC_SUBTYPE_OPTIONS,
-  emptySpecRow,
-  fileLabelFromUrl,
-} from "@/pages/admin/productAdminConstants";
+import { emptySpecRow, fileLabelFromUrl } from "@/pages/admin/productAdminConstants";
+import { ProductSpecSection, type ProductForm } from "@/components/admin/ProductSpecSection";
 
 function formatSupabaseError(err: unknown): string {
   if (err && typeof err === "object" && "message" in err) {
@@ -53,8 +50,6 @@ function saveFailureHint(detail: string): string | null {
   return null;
 }
 
-type ProductForm = Omit<Product, "id" | "created_at">;
-
 const FE0: [string, string, string, string, string] = ["", "", "", "", ""];
 
 const EMPTY_FORM: ProductForm = {
@@ -75,8 +70,11 @@ const EMPTY_FORM: ProductForm = {
   features_en: [...FE0],
   detail_html_ko: null,
   detail_html_en: null,
-  spec_subtype: "general",
+  spec_subtype: "gcl",
   spec_rows: [],
+  spec_gcc_plus_intro_ko: null,
+  spec_gcc_plus_intro_en: null,
+  spec_gcc_plus_tables: null,
 };
 
 function formFromProduct(p: Product): ProductForm {
@@ -98,8 +96,11 @@ function formFromProduct(p: Product): ProductForm {
     features_en: [...p.features_en],
     detail_html_ko: p.detail_html_ko ?? "",
     detail_html_en: p.detail_html_en ?? "",
-    spec_subtype: p.spec_subtype ?? "general",
+    spec_subtype: p.spec_subtype ?? "gcl",
     spec_rows: p.spec_rows.length ? p.spec_rows.map((r) => ({ ...r })) : [],
+    spec_gcc_plus_intro_ko: p.spec_gcc_plus_intro_ko ?? null,
+    spec_gcc_plus_intro_en: p.spec_gcc_plus_intro_en ?? null,
+    spec_gcc_plus_tables: p.spec_gcc_plus_tables?.length ? p.spec_gcc_plus_tables.map((t) => ({ ...t, rows: t.rows.map((r) => ({ ...r })) })) : null,
   };
 }
 
@@ -196,7 +197,7 @@ export function ProductInfoPage() {
       features_en: normalizeFeaturesTuple(f.features_en),
       detail_html_ko: String(f.detail_html_ko ?? "").trim() || null,
       detail_html_en: String(f.detail_html_en ?? "").trim() || null,
-      spec_subtype: String(f.spec_subtype ?? "").trim() || null,
+      spec_subtype: normalizeSpecSubtype(f.spec_subtype),
       spec_rows: f.spec_rows,
     };
   }
@@ -332,9 +333,6 @@ export function ProductInfoPage() {
   const saveErrorText =
     create.isError || update.isError ? formatSupabaseError(create.error ?? update.error) : "";
   const saveErrorHint = saveErrorText ? saveFailureHint(saveErrorText) : null;
-  const specSterileLayout = form.spec_subtype === "sterile";
-  const specAnesthesiaLayout = form.spec_subtype === "anesthesia";
-
   if (isLoading && !products.length) return <PageSpinner />;
 
   return (
@@ -619,146 +617,15 @@ export function ProductInfoPage() {
           </FormSection>
 
           <FormSection title="규격 정보">
-              <p className="text-sm font-medium text-gray-800 mb-2">서브 구분</p>
-              <div className="flex flex-wrap gap-4 mb-4">
-                {SPEC_SUBTYPE_OPTIONS.map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="spec_subtype"
-                      checked={form.spec_subtype === opt.value}
-                      onChange={() => setForm((p) => ({ ...p, spec_subtype: opt.value }))}
-                    />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
-
-              <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table
-                  className={`w-full text-sm ${
-                    specSterileLayout ? "min-w-[420px]" : specAnesthesiaLayout ? "min-w-[800px]" : "min-w-[640px]"
-                  }`}
-                >
-                  <thead className="bg-gray-100 text-slate-700">
-                    <tr>
-                      <th className="px-2 py-2 w-10 text-center">
-                        <span className="sr-only">선택</span>
-                      </th>
-                      {!specSterileLayout && specAnesthesiaLayout ? (
-                        <th className="px-2 py-2 text-left font-bold">Model</th>
-                      ) : null}
-                      <th className="px-2 py-2 text-left font-bold">Gauge</th>
-                      <th className="px-2 py-2 text-left font-bold">Color</th>
-                      <th className="px-2 py-2 text-left font-bold">Length</th>
-                      {!specSterileLayout ? (
-                        <>
-                          <th className="px-2 py-2 text-left font-bold">Type</th>
-                          <th className="px-2 py-2 text-left font-bold">Size (ø etc.)</th>
-                        </>
-                      ) : null}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {form.spec_rows.map((row, i) => (
-                      <tr key={i} className="border-t border-gray-100">
-                        <td className="px-2 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={specSelected.has(i)}
-                            onChange={() => toggleSpecRow(i)}
-                            aria-label={`행 ${i + 1} 선택`}
-                          />
-                        </td>
-                        {!specSterileLayout && specAnesthesiaLayout ? (
-                          <td className="px-2 py-2">
-                            <input
-                              className="input w-full text-xs py-1"
-                              value={row.model ?? ""}
-                              onChange={(e) => updateSpecRow(i, { model: e.target.value })}
-                              placeholder="Model"
-                            />
-                          </td>
-                        ) : null}
-                        <td className="px-2 py-2">
-                          <input
-                            className="input w-full text-xs py-1"
-                            value={row.gauge}
-                            onChange={(e) => updateSpecRow(i, { gauge: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              className="h-8 w-10 cursor-pointer rounded border border-gray-200 p-0"
-                              value={/^#[0-9A-Fa-f]{6}$/.test(row.color_hex) ? row.color_hex : "#cccccc"}
-                              onChange={(e) => updateSpecRow(i, { color_hex: e.target.value })}
-                            />
-                            <input
-                              className="input flex-1 text-xs py-1 min-w-0"
-                              value={row.color_hex}
-                              onChange={(e) => updateSpecRow(i, { color_hex: e.target.value })}
-                              placeholder="#RRGGBB"
-                            />
-                          </div>
-                        </td>
-                        <td className="px-2 py-2">
-                          <input
-                            className="input w-full text-xs py-1"
-                            value={row.length}
-                            onChange={(e) => updateSpecRow(i, { length: e.target.value })}
-                          />
-                        </td>
-                        {!specSterileLayout ? (
-                          <>
-                            <td className="px-2 py-2">
-                              <select
-                                className="input w-full text-xs py-1"
-                                value={row.wall_type}
-                                onChange={(e) => updateSpecRow(i, { wall_type: e.target.value })}
-                              >
-                                {row.wall_type &&
-                                !(SPEC_TYPE_OPTIONS as readonly string[]).includes(row.wall_type) ? (
-                                  <option value={row.wall_type}>{row.wall_type}</option>
-                                ) : null}
-                                {SPEC_TYPE_OPTIONS.map((w) => (
-                                  <option key={w} value={w}>
-                                    {w}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2">
-                              <input
-                                className="input w-full text-xs py-1"
-                                value={row.measurement}
-                                onChange={(e) => updateSpecRow(i, { measurement: e.target.value })}
-                              />
-                            </td>
-                          </>
-                        ) : null}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {form.spec_rows.length === 0 && (
-                <p className="text-sm text-gray-400 py-4 text-center">규격 행이 없습니다. 항목 추가를 눌러 주세요.</p>
-              )}
-              <div className="flex flex-wrap justify-end gap-2 mt-3">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={addSpecRows}>
-                  항목 추가
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm text-red-700"
-                  onClick={deleteSelectedSpecRows}
-                  disabled={specSelected.size === 0}
-                >
-                  선택 삭제
-                </button>
-              </div>
+            <ProductSpecSection
+              form={form}
+              setForm={setForm}
+              specSelected={specSelected}
+              toggleSpecRow={toggleSpecRow}
+              addSpecRows={addSpecRows}
+              deleteSelectedSpecRows={deleteSelectedSpecRows}
+              updateSpecRow={updateSpecRow}
+            />
           </FormSection>
 
           <div className="flex flex-wrap justify-end gap-2">

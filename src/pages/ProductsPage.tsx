@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ import { productInfoService, productDisplayImages } from "@/lib/productInfoServi
 import { productCategoryService, headlineForSlug } from "@/lib/productCategoryService";
 import { pageBannerService } from "@/lib/pageBannerService";
 import { productLandingService } from "@/lib/productLandingService";
+import { defaultGccPlusTables, specCellValue, specColumnsForSubtype } from "@/lib/productSpecLayouts";
 import type { Product, ProductCategory, ProductSpecRow } from "@/types";
 
 /* ─── 폴백 (DB 비어 있을 때) ─── */
@@ -48,42 +49,23 @@ const NEEDLE_SPEC_ROWS: { gauge: string; color: string; length: string; pin: str
 const PRODUCT_SPEC_TABLE_RADIUS_PX = 8;
 
 function needleSpecAsRows(): ProductSpecRow[] {
+  const z = {
+    model: "",
+    pin: "",
+    cannula_size: "",
+    tube_length: "",
+    safety_type: "",
+    cannula: "",
+    capacity: "",
+  };
   return NEEDLE_SPEC_ROWS.map((r) => ({
+    ...z,
     gauge: r.gauge,
     length: r.length,
     color_hex: r.color,
     wall_type: "—",
     measurement: r.pin,
   }));
-}
-
-/** 제품 상세(보기) 규격 표 4열 — 헤더는 항상 영어. 마지막 열: 타입이 전 행 동일하면 타입명(I.D.(ETW) 등), 아니면 Size */
-function specPublicLastColumn(rows: ProductSpecRow[]): {
-  header: string;
-  formatCell: (row: ProductSpecRow) => string;
-} {
-  const meaningful = [
-    ...new Set(
-      rows
-        .map((r) => r.wall_type.trim())
-        .filter((w) => w.length > 0 && w !== "—")
-    ),
-  ];
-  if (meaningful.length === 1) {
-    return {
-      header: meaningful[0],
-      formatCell: (row) => row.measurement.trim() || "—",
-    };
-  }
-  return {
-    header: "Size",
-    formatCell: (row) => {
-      const wt = row.wall_type.trim();
-      const m = row.measurement.trim();
-      if (wt && wt !== "—") return `${wt} ${m}`.trim() || "—";
-      return m || "—";
-    },
-  };
 }
 
 function browsePillLabel(tab: string, lang: string, cats: ProductCategory[]): string {
@@ -807,14 +789,14 @@ export function ProductDetailPage() {
         ? needleSpecAsRows()
         : [];
 
-  const specSterileLayout = product.spec_subtype === "sterile";
-  const specAnesthesiaLayout = product.spec_subtype === "anesthesia";
-  const specLast = specSterileLayout ? null : specPublicLastColumn(specRowsForTable);
-  const specPublicHeaders = specSterileLayout
-    ? (["Gauge", "Color", "Length"] as const)
-    : specAnesthesiaLayout
-      ? (["Model", "Gauge", "Color", "Length", specLast!.header] as const)
-      : (["Gauge", "Color", "Length", specLast!.header] as const);
+  const specSubtype = product.spec_subtype ?? "gcl";
+  const isGccPlus = specSubtype === "gcc_plus";
+  const gccTables =
+    product.spec_gcc_plus_tables?.length ? product.spec_gcc_plus_tables : defaultGccPlusTables();
+  const gccIntro = lang === "ko" ? product.spec_gcc_plus_intro_ko : product.spec_gcc_plus_intro_en;
+  const specColumns = specColumnsForSubtype(specSubtype);
+  const showStandardSpecTable = !isGccPlus && specRowsForTable.length > 0;
+  const showGccBlock = isGccPlus;
 
   const listHref = `/board/product/browse?cat=${encodeURIComponent(product.category)}`;
   const catHeadline = headlineForSlug(product.category, lang, categoryRows);
@@ -931,118 +913,234 @@ export function ProductDetailPage() {
           </Link>
         </div>
 
-        {/* 규격 표: 상단 NEEDLE·갤러리와 동일한 그리드 좌측 패딩 기준선에 맞춤 (lg에서 전체 폭 행) */}
-        {specRowsForTable.length > 0 && (
+        {/* 규격 표 */}
+        {(showStandardSpecTable || showGccBlock) && (
           <div
             className="col-span-1 w-full lg:col-span-2"
             style={{ marginTop: "clamp(2.5rem, 5vw, 4rem)", paddingBottom: "clamp(2rem, 4vw, 3rem)" }}
           >
-            <div style={{ overflowX: "auto" }}>
-              <div
-                style={{
-                  width: "100%",
-                  borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX,
-                  overflow: "hidden",
-                }}
-              >
-                <table
+            {showGccBlock ? (
+              <div style={{ width: "100%" }}>
+                {gccIntro?.trim() ? (
+                  <p
+                    style={{
+                      fontSize: "1.45rem",
+                      color: "#555",
+                      lineHeight: 1.75,
+                      marginBottom: "2rem",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {gccIntro}
+                  </p>
+                ) : null}
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-center">
+                  {gccTables.map((tbl, ti) => (
+                    <Fragment key={ti}>
+                      {ti > 0 ? (
+                        <div
+                          className="hidden shrink-0 select-none items-center justify-center self-stretch pt-10 text-3xl font-light text-gray-400 lg:flex"
+                          aria-hidden
+                        >
+                          +
+                        </div>
+                      ) : null}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <h3
+                        style={{
+                          fontSize: "1.6rem",
+                          fontWeight: 800,
+                          color: "#111",
+                          marginBottom: "1rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        {lang === "ko" ? tbl.title_ko : tbl.title_en || tbl.title_ko}
+                      </h3>
+                      <div style={{ overflowX: "auto", borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX, overflow: "hidden" }}>
+                        <table
+                          style={{
+                            width: "100%",
+                            minWidth: 280,
+                            borderCollapse: "collapse",
+                            borderSpacing: 0,
+                            fontSize: "1.4rem",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <thead>
+                            <tr style={{ backgroundColor: "#333333", color: "#fff" }}>
+                              {(["Gauge", "Color", "Length"] as const).map((h) => (
+                                <th
+                                  key={h}
+                                  style={{
+                                    padding: "1rem 1.35rem",
+                                    textAlign: "left",
+                                    fontWeight: 700,
+                                    fontSize: "1.35rem",
+                                  }}
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tbl.rows.map((row, ri) => {
+                              const c = row.color_hex || "#ccc";
+                              const isLast = ri === tbl.rows.length - 1;
+                              const lightSwatch =
+                                c === "#fff" ||
+                                c === "#ffffff" ||
+                                c === "#ececec" ||
+                                c.toLowerCase() === "#ffffff";
+                              return (
+                                <tr
+                                  key={`gcc-${ti}-${ri}`}
+                                  style={{
+                                    backgroundColor: "#fff",
+                                    borderBottom: isLast ? "none" : "1px solid #e8e8e8",
+                                  }}
+                                >
+                                  <td
+                                    style={{
+                                      padding: "1rem 1.35rem",
+                                      fontWeight: 600,
+                                      color: "#4a4a4a",
+                                      verticalAlign: "middle",
+                                    }}
+                                  >
+                                    {row.gauge}
+                                  </td>
+                                  <td style={{ padding: "1rem 1.35rem", verticalAlign: "middle" }}>
+                                    <span
+                                      style={{
+                                        display: "block",
+                                        width: 48,
+                                        height: 15,
+                                        backgroundColor: c,
+                                        border: lightSwatch ? "1px solid #c5c5c5" : "none",
+                                        borderRadius: 4,
+                                      }}
+                                    />
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "1rem 1.35rem",
+                                      color: "#555",
+                                      verticalAlign: "middle",
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
+                                    {row.length}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <div
                   style={{
                     width: "100%",
-                    minWidth: specSterileLayout ? 360 : specAnesthesiaLayout ? 640 : 520,
-                    borderCollapse: "collapse",
-                    borderSpacing: 0,
-                    fontSize: "1.4rem",
-                    fontFamily: "inherit",
+                    borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX,
+                    overflow: "hidden",
                   }}
                 >
-                  <thead>
-                    <tr style={{ backgroundColor: "#333333", color: "#fff" }}>
-                      {specPublicHeaders.map((h, hi) => (
-                        <th
-                          key={`${hi}-${h}`}
-                          style={{
-                            padding: "1rem 1.35rem",
-                            textAlign: "left",
-                            fontWeight: 700,
-                            fontSize: "1.35rem",
-                            letterSpacing: "0.02em",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {specRowsForTable.map((row, ri) => {
-                      const c = row.color_hex || "#ccc";
-                      const isLast = ri === specRowsForTable.length - 1;
-                      const lightSwatch =
-                        c === "#fff" ||
-                        c === "#ffffff" ||
-                        c === "#ececec" ||
-                        c.toLowerCase() === "#ffffff";
-                      const cellBase = {
-                        padding: "1rem 1.35rem" as const,
-                        color: "#555" as const,
-                        verticalAlign: "middle" as const,
-                        lineHeight: 1.5 as const,
-                      };
-                      return (
-                        <tr
-                          key={`${row.model ?? ""}-${row.gauge}-${ri}`}
-                          style={{
-                            backgroundColor: "#fff",
-                            borderBottom: isLast ? "none" : "1px solid #e8e8e8",
-                          }}
-                        >
-                          {!specSterileLayout && specAnesthesiaLayout ? (
-                            <td
-                              style={{
-                                padding: "1rem 1.35rem",
-                                fontWeight: 600,
-                                color: "#4a4a4a",
-                                verticalAlign: "middle",
-                              }}
-                            >
-                              {(row.model ?? "").trim() || "—"}
-                            </td>
-                          ) : null}
-                          <td
+                  <table
+                    style={{
+                      width: "100%",
+                      minWidth: specColumns.length >= 6 ? 640 : specColumns.length >= 4 ? 520 : 360,
+                      borderCollapse: "collapse",
+                      borderSpacing: 0,
+                      fontSize: "1.4rem",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ backgroundColor: "#333333", color: "#fff" }}>
+                        {specColumns.map((col) => (
+                          <th
+                            key={col.field}
                             style={{
                               padding: "1rem 1.35rem",
-                              fontWeight: 600,
-                              color: "#4a4a4a",
-                              verticalAlign: "middle",
+                              textAlign: "left",
+                              fontWeight: 700,
+                              fontSize: "1.35rem",
+                              letterSpacing: "0.02em",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {row.gauge}
-                          </td>
-                          <td style={{ padding: "1rem 1.35rem", verticalAlign: "middle" }}>
-                            <span
-                              style={{
-                                display: "block",
-                                width: 48,
-                                height: 15,
-                                backgroundColor: c,
-                                border: lightSwatch ? "1px solid #c5c5c5" : "none",
-                                borderRadius: 4,
-                                verticalAlign: "middle",
-                              }}
-                            />
-                          </td>
-                          <td style={cellBase}>{row.length}</td>
-                          {!specSterileLayout && specLast ? (
-                            <td style={cellBase}>{specLast.formatCell(row)}</td>
-                          ) : null}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            {col.header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {specRowsForTable.map((row, ri) => {
+                        const isLast = ri === specRowsForTable.length - 1;
+                        return (
+                          <tr
+                            key={`${specCellValue(row, specColumns[0]?.field ?? "gauge")}-${ri}`}
+                            style={{
+                              backgroundColor: "#fff",
+                              borderBottom: isLast ? "none" : "1px solid #e8e8e8",
+                            }}
+                          >
+                            {specColumns.map((col) => {
+                              const raw = specCellValue(row, col.field);
+                              if (col.kind === "color") {
+                                const c = raw || "#ccc";
+                                const lightSwatch =
+                                  c === "#fff" ||
+                                  c === "#ffffff" ||
+                                  c === "#ececec" ||
+                                  c.toLowerCase() === "#ffffff";
+                                return (
+                                  <td key={col.field} style={{ padding: "1rem 1.35rem", verticalAlign: "middle" }}>
+                                    <span
+                                      style={{
+                                        display: "block",
+                                        width: 48,
+                                        height: 15,
+                                        backgroundColor: c,
+                                        border: lightSwatch ? "1px solid #c5c5c5" : "none",
+                                        borderRadius: 4,
+                                      }}
+                                    />
+                                  </td>
+                                );
+                              }
+                              return (
+                                <td
+                                  key={col.field}
+                                  style={{
+                                    padding: "1rem 1.35rem",
+                                    fontWeight: col.field === "gauge" || col.field === "model" || col.field === "cannula" || col.field === "capacity" ? 600 : 400,
+                                    color: "#4a4a4a",
+                                    verticalAlign: "middle",
+                                    lineHeight: 1.5,
+                                  }}
+                                >
+                                  {raw.trim() || "—"}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
         </div>

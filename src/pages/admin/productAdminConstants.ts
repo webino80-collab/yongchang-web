@@ -7,18 +7,6 @@ export const SPEC_TYPE_OPTIONS = [
   "Inner O.D.",
 ] as const;
 
-/** 규격 정보 서브 구분(라디오) */
-export const SPEC_SUBTYPE_OPTIONS = [
-  { value: "general", label: "일반 바늘" },
-  { value: "cannula_line", label: "캐뉼라" },
-  { value: "meso", label: "메조" },
-  { value: "sterile", label: "멸균" },
-  { value: "pen", label: "펜니들" },
-  { value: "anesthesia", label: "천자침" },
-  { value: "syringe", label: "주사기" },
-  { value: "other", label: "기타" },
-] as const;
-
 export function emptySpecRow(): ProductSpecRow {
   return {
     model: "",
@@ -27,6 +15,12 @@ export function emptySpecRow(): ProductSpecRow {
     color_hex: "#cccccc",
     wall_type: SPEC_TYPE_OPTIONS[0],
     measurement: "",
+    pin: "",
+    cannula_size: "",
+    tube_length: "",
+    safety_type: "",
+    cannula: "",
+    capacity: "",
   };
 }
 

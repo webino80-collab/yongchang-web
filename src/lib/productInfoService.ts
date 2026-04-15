@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import type { Product, ProductSpecRow } from "@/types";
+import { normalizeGccPlusTables, normalizeSpecSubtype } from "./productSpecLayouts";
 
 /*
   DB 스키마·Storage·RLS: supabase/migrations/003_site_content_tables.sql
@@ -64,6 +65,12 @@ export function normalizeSpecRows(raw: unknown): ProductSpecRow[] {
       color_hex: String(r.color_hex ?? r.color ?? "#cccccc"),
       wall_type: String(r.wall_type ?? ""),
       measurement: String(r.measurement ?? ""),
+      pin: String(r.pin ?? ""),
+      cannula_size: String(r.cannula_size ?? ""),
+      tube_length: String(r.tube_length ?? ""),
+      safety_type: String(r.safety_type ?? ""),
+      cannula: String(r.cannula ?? ""),
+      capacity: String(r.capacity ?? ""),
     }));
 }
 
@@ -80,8 +87,11 @@ function mapProductRow(row: Product): Product {
     features_en: normalizeFeaturesTuple(r.features_en),
     detail_html_ko: (r.detail_html_ko as string) ?? null,
     detail_html_en: (r.detail_html_en as string) ?? null,
-    spec_subtype: (r.spec_subtype as string) ?? null,
+    spec_subtype: normalizeSpecSubtype((r.spec_subtype as string) ?? null),
     spec_rows: normalizeSpecRows(r.spec_rows),
+    spec_gcc_plus_intro_ko: (r.spec_gcc_plus_intro_ko as string) ?? null,
+    spec_gcc_plus_intro_en: (r.spec_gcc_plus_intro_en as string) ?? null,
+    spec_gcc_plus_tables: normalizeGccPlusTables(r.spec_gcc_plus_tables),
   };
 }
 

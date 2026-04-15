@@ -151,16 +151,34 @@ export interface HomeProduct {
   created_at: string;
 }
 
-/** 제품 규격표 한 행 (관리자 규격 정보) */
+/** 제품 규격표 한 행 (관리자 규격 정보) — 미사용 열은 빈 문자열 */
 export interface ProductSpecRow {
-  /** 천자침(anesthesia) 서브구분일 때만 사용 — Model 열 */
-  model?: string;
+  model: string;
   gauge: string;
   length: string;
   color_hex: string;
-  /** 규격 "타입" (I.D.(ETW) 등, DB·JSON 키는 wall_type 유지) */
   wall_type: string;
   measurement: string;
+  pin: string;
+  cannula_size: string;
+  tube_length: string;
+  safety_type: string;
+  cannula: string;
+  capacity: string;
+}
+
+/** GCC+ 이중 표의 한 행 */
+export interface GccPlusSpecRow {
+  gauge: string;
+  color_hex: string;
+  length: string;
+}
+
+/** GCC+ 표 하나 (제목 + 행들) */
+export interface GccPlusSpecTable {
+  title_ko: string;
+  title_en: string;
+  rows: GccPlusSpecRow[];
 }
 
 export interface Product {
@@ -187,6 +205,12 @@ export interface Product {
   detail_html_en: string | null;
   spec_subtype: string | null;
   spec_rows: ProductSpecRow[];
+  /** GCC+ 상단 안내 (국문) */
+  spec_gcc_plus_intro_ko?: string | null;
+  /** GCC+ 상단 안내 (영문) */
+  spec_gcc_plus_intro_en?: string | null;
+  /** GCC+ 복수 표 (Gauge/Color/Length) */
+  spec_gcc_plus_tables?: GccPlusSpecTable[] | null;
 }
 
 /** 제품 분류 — `products.category` 값과 `slug`가 동일 */
