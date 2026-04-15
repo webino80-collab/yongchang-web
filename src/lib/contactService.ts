@@ -86,8 +86,19 @@ export const contactService = {
       .eq("id", id);
     if (error) throw error;
 
+    // send-inquiry-reply 는 verify_jwt=true — 게이트웨이·함수 모두 Bearer 필요.
+    // 일부 환경에서 invoke 가 세션 헤더를 붙이지 않는 경우가 있어 access_token 을 명시합니다.
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionErr || !accessToken) {
+      throw new Error("로그인 세션이 없습니다. 다시 로그인한 뒤 답변 저장을 시도해 주세요.");
+    }
+
     const { error: fnError } = await supabase.functions.invoke("send-inquiry-reply", {
       body: { inquiry_id: id, reply_content: replyContent },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
     if (fnError) {
       console.error("send-inquiry-reply invoke:", fnError);
