@@ -143,7 +143,7 @@ export function specColumnsForSubtype(subtype: string | null | undefined): SpecC
       ];
     case "cgl":
       return [
-        { field: "color_hex", header: "Color", kind: "color" },
+        { field: "capacity", header: "Capacity", kind: "text" },
         { field: "gauge", header: "Gauge", kind: "text" },
         { field: "length", header: "Length", kind: "text" },
       ];

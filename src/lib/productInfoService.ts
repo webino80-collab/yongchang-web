@@ -100,6 +100,16 @@ export function normalizeSpecRows(raw: unknown): ProductSpecRow[] {
 
 function mapProductRow(row: Product): Product {
   const r = row as unknown as Record<string, unknown>;
+  const spec_subtype = normalizeSpecSubtype((r.spec_subtype as string) ?? null);
+  let spec_rows = normalizeSpecRows(r.spec_rows);
+  if (spec_subtype === "cgl") {
+    spec_rows = spec_rows.map((row) => {
+      if (row.capacity.trim()) return row;
+      const legacy = row.color_hex.trim();
+      if (!legacy || legacy === "#cccccc") return row;
+      return { ...row, capacity: legacy };
+    });
+  }
   return {
     ...row,
     gallery_urls: normalizeGalleryUrls(r.gallery_urls),
@@ -111,8 +121,8 @@ function mapProductRow(row: Product): Product {
     features_en: normalizeFeaturesTuple(r.features_en),
     detail_html_ko: (r.detail_html_ko as string) ?? null,
     detail_html_en: (r.detail_html_en as string) ?? null,
-    spec_subtype: normalizeSpecSubtype((r.spec_subtype as string) ?? null),
-    spec_rows: normalizeSpecRows(r.spec_rows),
+    spec_subtype,
+    spec_rows,
     spec_gcc_plus_intro_ko: (r.spec_gcc_plus_intro_ko as string) ?? null,
     spec_gcc_plus_intro_en: (r.spec_gcc_plus_intro_en as string) ?? null,
     spec_gcc_plus_tables: normalizeGccPlusTables(r.spec_gcc_plus_tables),
