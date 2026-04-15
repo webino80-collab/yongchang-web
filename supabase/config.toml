@@ -7,6 +7,7 @@ verify_jwt = false
 [functions.keep-alive]
 verify_jwt = false
 
-# 관리자 세션(JWT)으로만 호출 — 문의자에게 답변 메일 발송
+# 게이트웨이 JWT 검증은 끔. 일부 프로젝트(비대칭 JWT 등)에서 verify_jwt=true 면
+# 유효한 세션으로도 API 게이트웨이가 401을 내는 경우가 있음 → 함수 내부에서 Bearer + getUser + 관리자 검사.
 [functions.send-inquiry-reply]
-verify_jwt = true
+verify_jwt = false

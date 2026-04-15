@@ -3,6 +3,7 @@
  * 관리자가 문의 답변 저장 시 → 문의자 이메일로 답변 내용 발송
  *
  * 호출: 관리자 로그인 상태에서 supabase.functions.invoke (contactService.sendReply 이후)
+ * 인증: config.toml 에서 verify_jwt=false — 게이트웨이 401 회피. 본 함수에서 Authorization Bearer + getUser + profiles.is_admin 검사.
  *
  * Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
  *          MAIL_WORKER_URL, MAIL_WORKER_SECRET (권장) 또는 SMTP_*
