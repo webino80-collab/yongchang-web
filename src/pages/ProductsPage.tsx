@@ -857,7 +857,7 @@ export function ProductDetailPage() {
         <div className="grid grid-cols-1 items-start gap-[clamp(2rem,4vw,4rem)] pt-8 lg:grid-cols-2">
         <ProductGallery product={product} title={title ?? ""} />
 
-        {/* 본문(우측): 제목·요약 — 상세 HTML은 제품 문의 아래·스펙 표 위에서 전체 너비·가운데 정렬 */}
+        {/* 본문(우측): 제목·요약·특징·문의를 한 열에 두어 갤러리 행과 높이 맞춤 시 생기던 빈 공간을 없앰 */}
         <div style={{ marginTop: 50 }}>
           <h2 style={{ fontSize: "clamp(2rem, 2.2vw, 2.4rem)", fontWeight: 800, color: "#111", marginBottom: subtitle ? "0.5rem" : "1.2rem" }}>
             {title}
@@ -868,48 +868,41 @@ export function ProductDetailPage() {
           {intro && (
             <p style={{ fontSize: "1.45rem", color: "#666", lineHeight: 1.75, marginBottom: "2rem" }}>{intro}</p>
           )}
-        </div>
 
-        <div
-          className="col-span-1 mt-[clamp(1.25rem,3vw,2.5rem)] grid w-full grid-cols-1 gap-[clamp(2rem,4vw,4rem)] lg:col-span-2 lg:grid-cols-2"
-        >
-          <div className="hidden min-h-0 lg:block" aria-hidden />
-          <div>
-            <div
-              className="product-feature-bullets"
-              style={{
-                border: "1px dashed #c8c8c8",
-                borderRadius: "0.8rem",
-                padding: "1.5rem 1.75rem",
-                backgroundColor: "#fff",
-                marginBottom: "2.4rem",
-              }}
-            >
-              <ul style={{ fontSize: "1.38rem", color: "#333", lineHeight: 1.75 }}>
-                {featureList.map((line, i) => (
-                  <li key={`${i}-${line.slice(0, 24)}`}>{line}</li>
-                ))}
-              </ul>
-            </div>
-
-            <Link
-              to="/contact"
-              style={{
-                display: "inline-block",
-                padding: "0.9rem 2.8rem",
-                borderRadius: "999px",
-                border: "1px solid #111",
-                fontSize: "1.45rem",
-                fontWeight: 600,
-                color: "#111",
-                textDecoration: "none",
-                transition: "background 0.2s, color 0.2s",
-              }}
-              className="hover:bg-[#111] hover:!text-white"
-            >
-              {lang === "ko" ? "제품 문의" : "Product Inquiry"}
-            </Link>
+          <div
+            className="product-feature-bullets"
+            style={{
+              border: "1px dashed #c8c8c8",
+              borderRadius: "0.8rem",
+              padding: "1.5rem 1.75rem",
+              backgroundColor: "#fff",
+              marginBottom: "2.4rem",
+            }}
+          >
+            <ul style={{ fontSize: "1.38rem", color: "#333", lineHeight: 1.75 }}>
+              {featureList.map((line, i) => (
+                <li key={`${i}-${line.slice(0, 24)}`}>{line}</li>
+              ))}
+            </ul>
           </div>
+
+          <Link
+            to="/contact"
+            style={{
+              display: "inline-block",
+              padding: "0.9rem 2.8rem",
+              borderRadius: "999px",
+              border: "1px solid #111",
+              fontSize: "1.45rem",
+              fontWeight: 600,
+              color: "#111",
+              textDecoration: "none",
+              transition: "background 0.2s, color 0.2s",
+            }}
+            className="hover:bg-[#111] hover:!text-white"
+          >
+            {lang === "ko" ? "제품 문의" : "Product Inquiry"}
+          </Link>
         </div>
 
         {detailHtml?.trim() ? (
