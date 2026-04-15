@@ -333,6 +333,7 @@ export function ProductInfoPage() {
     create.isError || update.isError ? formatSupabaseError(create.error ?? update.error) : "";
   const saveErrorHint = saveErrorText ? saveFailureHint(saveErrorText) : null;
   const specSterileLayout = form.spec_subtype === "sterile";
+  const specAnesthesiaLayout = form.spec_subtype === "anesthesia";
 
   if (isLoading && !products.length) return <PageSpinner />;
 
@@ -634,12 +635,19 @@ export function ProductInfoPage() {
               </div>
 
               <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className={`w-full text-sm ${specSterileLayout ? "min-w-[420px]" : "min-w-[640px]"}`}>
+                <table
+                  className={`w-full text-sm ${
+                    specSterileLayout ? "min-w-[420px]" : specAnesthesiaLayout ? "min-w-[800px]" : "min-w-[640px]"
+                  }`}
+                >
                   <thead className="bg-gray-100 text-slate-700">
                     <tr>
                       <th className="px-2 py-2 w-10 text-center">
                         <span className="sr-only">선택</span>
                       </th>
+                      {!specSterileLayout && specAnesthesiaLayout ? (
+                        <th className="px-2 py-2 text-left font-bold">Model</th>
+                      ) : null}
                       <th className="px-2 py-2 text-left font-bold">Gauge</th>
                       <th className="px-2 py-2 text-left font-bold">Color</th>
                       <th className="px-2 py-2 text-left font-bold">Length</th>
@@ -662,6 +670,16 @@ export function ProductInfoPage() {
                             aria-label={`행 ${i + 1} 선택`}
                           />
                         </td>
+                        {!specSterileLayout && specAnesthesiaLayout ? (
+                          <td className="px-2 py-2">
+                            <input
+                              className="input w-full text-xs py-1"
+                              value={row.model ?? ""}
+                              onChange={(e) => updateSpecRow(i, { model: e.target.value })}
+                              placeholder="Model"
+                            />
+                          </td>
+                        ) : null}
                         <td className="px-2 py-2">
                           <input
                             className="input w-full text-xs py-1"

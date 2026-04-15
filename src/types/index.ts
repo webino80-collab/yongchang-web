@@ -153,6 +153,8 @@ export interface HomeProduct {
 
 /** 제품 규격표 한 행 (관리자 규격 정보) */
 export interface ProductSpecRow {
+  /** 천자침(anesthesia) 서브구분일 때만 사용 — Model 열 */
+  model?: string;
   gauge: string;
   length: string;
   color_hex: string;

@@ -808,10 +808,13 @@ export function ProductDetailPage() {
         : [];
 
   const specSterileLayout = product.spec_subtype === "sterile";
+  const specAnesthesiaLayout = product.spec_subtype === "anesthesia";
   const specLast = specSterileLayout ? null : specPublicLastColumn(specRowsForTable);
   const specPublicHeaders = specSterileLayout
     ? (["Gauge", "Color", "Length"] as const)
-    : (["Gauge", "Color", "Length", specLast!.header] as const);
+    : specAnesthesiaLayout
+      ? (["Model", "Gauge", "Color", "Length", specLast!.header] as const)
+      : (["Gauge", "Color", "Length", specLast!.header] as const);
 
   const listHref = `/board/product/browse?cat=${encodeURIComponent(product.category)}`;
   const catHeadline = headlineForSlug(product.category, lang, categoryRows);
@@ -945,7 +948,7 @@ export function ProductDetailPage() {
                 <table
                   style={{
                     width: "100%",
-                    minWidth: specSterileLayout ? 360 : 520,
+                    minWidth: specSterileLayout ? 360 : specAnesthesiaLayout ? 640 : 520,
                     borderCollapse: "collapse",
                     borderSpacing: 0,
                     fontSize: "1.4rem",
@@ -980,14 +983,32 @@ export function ProductDetailPage() {
                         c === "#ffffff" ||
                         c === "#ececec" ||
                         c.toLowerCase() === "#ffffff";
+                      const cellBase = {
+                        padding: "1rem 1.35rem" as const,
+                        color: "#555" as const,
+                        verticalAlign: "middle" as const,
+                        lineHeight: 1.5 as const,
+                      };
                       return (
                         <tr
-                          key={`${row.gauge}-${ri}`}
+                          key={`${row.model ?? ""}-${row.gauge}-${ri}`}
                           style={{
                             backgroundColor: "#fff",
                             borderBottom: isLast ? "none" : "1px solid #e8e8e8",
                           }}
                         >
+                          {!specSterileLayout && specAnesthesiaLayout ? (
+                            <td
+                              style={{
+                                padding: "1rem 1.35rem",
+                                fontWeight: 600,
+                                color: "#4a4a4a",
+                                verticalAlign: "middle",
+                              }}
+                            >
+                              {(row.model ?? "").trim() || "—"}
+                            </td>
+                          ) : null}
                           <td
                             style={{
                               padding: "1rem 1.35rem",
@@ -1011,27 +1032,9 @@ export function ProductDetailPage() {
                               }}
                             />
                           </td>
-                          <td
-                            style={{
-                              padding: "1rem 1.35rem",
-                              color: "#555",
-                              verticalAlign: "middle",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            {row.length}
-                          </td>
+                          <td style={cellBase}>{row.length}</td>
                           {!specSterileLayout && specLast ? (
-                            <td
-                              style={{
-                                padding: "1rem 1.35rem",
-                                color: "#555",
-                                verticalAlign: "middle",
-                                lineHeight: 1.5,
-                              }}
-                            >
-                              {specLast.formatCell(row)}
-                            </td>
+                            <td style={cellBase}>{specLast.formatCell(row)}</td>
                           ) : null}
                         </tr>
                       );

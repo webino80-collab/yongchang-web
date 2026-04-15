@@ -21,6 +21,7 @@ export const SPEC_SUBTYPE_OPTIONS = [
 
 export function emptySpecRow(): ProductSpecRow {
   return {
+    model: "",
     gauge: "",
     length: "",
     color_hex: "#cccccc",

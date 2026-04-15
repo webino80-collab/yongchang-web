@@ -58,6 +58,7 @@ export function normalizeSpecRows(raw: unknown): ProductSpecRow[] {
   return raw
     .filter((r): r is Record<string, unknown> => r != null && typeof r === "object")
     .map((r) => ({
+      model: String(r.model ?? ""),
       gauge: String(r.gauge ?? ""),
       length: String(r.length ?? ""),
       color_hex: String(r.color_hex ?? r.color ?? "#cccccc"),
