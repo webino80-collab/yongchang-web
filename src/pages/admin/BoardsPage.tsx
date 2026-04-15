@@ -9,7 +9,7 @@ async function fetchAllBoards(): Promise<Board[]> {
     .select("*, board_groups(*)")
     .order("display_order");
   if (error) throw error;
-  return data as Board[];
+  return data as unknown as Board[];
 }
 
 export function BoardsPage() {

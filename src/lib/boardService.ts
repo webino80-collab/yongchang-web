@@ -11,7 +11,7 @@ export const boardService = {
       .eq("is_active", true)
       .order("display_order");
     if (error) throw error;
-    return data as Board[];
+    return data as unknown as Board[];
   },
 
   async getBoardBySlug(slug: string): Promise<Board | null> {
@@ -22,7 +22,7 @@ export const boardService = {
       .eq("is_active", true)
       .single();
     if (error) return null;
-    return data as Board;
+    return data as unknown as Board;
   },
 
   // ---- Posts ----
@@ -55,7 +55,7 @@ export const boardService = {
     const total = count ?? 0;
 
     return {
-      data: data as Post[],
+      data: data as unknown as Post[],
       meta: {
         page,
         perPage,
@@ -87,7 +87,7 @@ export const boardService = {
       .eq("id", postId)
       .single();
     if (error) return null;
-    return data as Post;
+    return data as unknown as Post;
   },
 
   async createPost(
@@ -160,7 +160,7 @@ export const boardService = {
       .eq("post_id", postId)
       .order("created_at");
     if (error) throw error;
-    return data as Comment[];
+    return data as unknown as Comment[];
   },
 
   async createComment(
@@ -174,7 +174,7 @@ export const boardService = {
       .select("*, profiles(id, nickname, avatar_url)")
       .single();
     if (error) throw error;
-    return data as Comment;
+    return data as unknown as Comment;
   },
 
   async deleteComment(commentId: string) {

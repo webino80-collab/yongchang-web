@@ -20,7 +20,7 @@ async function fetchAllPosts(page: number) {
     .order("created_at", { ascending: false })
     .range((page - 1) * PER_PAGE, page * PER_PAGE - 1);
   if (error) throw error;
-  return { data: data as Post[], total: count ?? 0 };
+  return { data: data as unknown as Post[], total: count ?? 0 };
 }
 
 export function PostsPage() {
