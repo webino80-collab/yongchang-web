@@ -7,6 +7,7 @@ export const LEVEL5_CONTENT_ADMIN_LEVEL = 5;
 export const LEVEL5_ADMIN_NAV_PATHS = [
   "/admin/visual",
   "/admin/page-banners",
+  "/admin/about-timeline",
   "/admin/product-landing",
   "/admin/products",
   "/admin/certificates",

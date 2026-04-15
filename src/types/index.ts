@@ -227,6 +227,20 @@ export interface PageBanner {
   updated_at: string;
 }
 
+/** About 연혁 한 줄(월·국문·영문) */
+export interface AboutTimelineEvent {
+  date: string;
+  ko: string;
+  en: string;
+}
+
+/** About 연혁 연도 블록 (`img_path`: imgBase 기준 상대경로 또는 http(s) URL) */
+export interface AboutTimelineYear {
+  year: string;
+  img_path: string | null;
+  events: AboutTimelineEvent[];
+}
+
 /** /board/product 랜딩 2×2 카드 (카테고리 키 = browse 필터와 동일) */
 export interface ProductLandingCategory {
   category: string;

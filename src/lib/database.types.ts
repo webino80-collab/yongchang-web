@@ -513,6 +513,26 @@ export type Database = {
         };
         Relationships: [];
       };
+      about_timeline: {
+        Row: {
+          id: number;
+          items: unknown;
+          is_active: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          items: unknown;
+          is_active?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          items?: unknown;
+          is_active?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       page_banners: {
         Row: {
           id: string;

@@ -29,6 +29,7 @@ import { MembersPage } from "@/pages/admin/MembersPage";
 import { CreateOperatorPage } from "@/pages/admin/CreateOperatorPage";
 import { PostsPage } from "@/pages/admin/PostsPage";
 import { InquiriesPage } from "@/pages/admin/InquiriesPage";
+import { AboutTimelineAdminPage } from "@/pages/admin/AboutTimelineAdminPage";
 
 export default function App() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="certificates" element={<CertificateAdminPage />} />
         <Route path="brochures" element={<BrochureAdminPage />} />
         <Route path="page-banners" element={<PageBannerAdminPage />} />
+        <Route path="about-timeline" element={<AboutTimelineAdminPage />} />
         <Route path="product-landing" element={<ProductLandingAdminPage />} />
         <Route path="boards" element={<BoardsPage />} />
         <Route path="create-operator" element={<CreateOperatorPage />} />

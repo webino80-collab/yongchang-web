@@ -20,6 +20,7 @@ const navItems = [
   { to: "/admin/visual",       label: "비주얼 관리",     icon: "🖼️" },
   { to: "/admin/home-products",label: "홈 제품 관리",    icon: "🏠" },
   { to: "/admin/page-banners", label: "페이지 배너 관리", icon: "🖼️" },
+  { to: "/admin/about-timeline", label: "About 연혁", icon: "📅" },
   { to: "/admin/product-landing", label: "제품 랜딩 카드", icon: "▦" },
   { to: "/admin/products",     label: "제품소개 관리",   icon: "💉" },
   { to: "/admin/certificates", label: "특허·인증 관리",  icon: "📜" },
