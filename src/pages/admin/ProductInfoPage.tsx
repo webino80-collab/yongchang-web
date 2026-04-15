@@ -126,14 +126,41 @@ function FormSection({ title, children }: { title: string; children: ReactNode }
   );
 }
 
+function escapeHtmlAttr(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;");
+}
+
+/** Storage 업로드 URL을 상세 HTML에 삽입할 때 사용 (반응형 이미지) */
+function detailHtmlImageSnippet(publicUrl: string): string {
+  const src = escapeHtmlAttr(publicUrl.trim());
+  return `<p><img src="${src}" alt="" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;display:block" /></p>\n`;
+}
+
+type DetailLang = "ko" | "en";
+
+type SelRange = { start: number; end: number };
+
 export function ProductInfoPage() {
   const queryClient = useQueryClient();
   const slotFileRef = useRef<HTMLInputElement>(null);
   const pendingSlotIndex = useRef<number>(0);
+  const detailHtmlImgInputRef = useRef<HTMLInputElement>(null);
+  const detailHtmlKoRef = useRef<HTMLTextAreaElement>(null);
+  const detailHtmlEnRef = useRef<HTMLTextAreaElement>(null);
+  const pendingDetailLang = useRef<DetailLang>("ko");
+  const detailSelRef = useRef<{ ko: SelRange; en: SelRange }>({
+    ko: { start: 0, end: 0 },
+    en: { start: 0, end: 0 },
+  });
 
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [detailImgUploading, setDetailImgUploading] = useState<null | DetailLang>(null);
   const [showForm, setShowForm] = useState(false);
   const [specSelected, setSpecSelected] = useState<Set<number>>(new Set());
 
@@ -272,6 +299,56 @@ export function ProductInfoPage() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }
+
+  function captureDetailSelection(lang: DetailLang) {
+    const ta = lang === "ko" ? detailHtmlKoRef.current : detailHtmlEnRef.current;
+    if (!ta) return;
+    detailSelRef.current[lang] = { start: ta.selectionStart, end: ta.selectionEnd };
+  }
+
+  function onDetailImgPickMouseDown(lang: DetailLang, e: React.MouseEvent) {
+    e.preventDefault();
+    pendingDetailLang.current = lang;
+    captureDetailSelection(lang);
+  }
+
+  function openDetailHtmlImagePicker(lang: DetailLang) {
+    pendingDetailLang.current = lang;
+    detailHtmlImgInputRef.current?.click();
+  }
+
+  async function handleDetailHtmlImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    const lang = pendingDetailLang.current;
+    e.target.value = "";
+    if (!file) return;
+    setDetailImgUploading(lang);
+    try {
+      const url = await productInfoService.uploadImage(file);
+      const snippet = detailHtmlImageSnippet(url);
+      const key = lang === "ko" ? "detail_html_ko" : "detail_html_en";
+      const { start, end } = detailSelRef.current[lang];
+      setForm((f) => {
+        const cur = String(f[key as "detail_html_ko" | "detail_html_en"] ?? "");
+        const next = cur.slice(0, start) + snippet + cur.slice(end);
+        return { ...f, [key]: next };
+      });
+      const ta = lang === "ko" ? detailHtmlKoRef.current : detailHtmlEnRef.current;
+      const insAt = start + snippet.length;
+      requestAnimationFrame(() => {
+        if (ta) {
+          ta.focus();
+          ta.setSelectionRange(insAt, insAt);
+        }
+        detailSelRef.current[lang] = { start: insAt, end: insAt };
+      });
+    } catch (err) {
+      console.error(err);
+      alert(`상세 이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDetailImgUploading(null);
     }
   }
 
@@ -591,25 +668,64 @@ export function ProductInfoPage() {
           </FormSection>
 
           <FormSection title="상세 정보">
+              <input
+                ref={detailHtmlImgInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleDetailHtmlImageFile}
+              />
               <p className="text-xs text-gray-500 mb-3">
-                HTML 태그를 직접 입력할 수 있습니다. 이미지 가로는 <strong>1200px 이하</strong>를 권장합니다.
+                HTML 태그를 직접 입력할 수 있습니다. <strong>이미지 업로드</strong>를 누르면 Storage에 올린 뒤{" "}
+                <code className="rounded bg-gray-100 px-1">&lt;img&gt;</code> 태그가 커서 위치에 삽입됩니다. 이미지 가로는{" "}
+                <strong>1200px 이하</strong>를 권장합니다.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제품 상세설명 (국문) HTML</label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label className="block text-sm font-medium text-gray-700">제품 상세설명 (국문) HTML</label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm shrink-0"
+                      disabled={detailImgUploading !== null || uploading}
+                      onMouseDown={(e) => onDetailImgPickMouseDown("ko", e)}
+                      onClick={() => openDetailHtmlImagePicker("ko")}
+                    >
+                      {detailImgUploading === "ko" ? "업로드 중…" : "이미지 업로드"}
+                    </button>
+                  </div>
                   <textarea
+                    ref={detailHtmlKoRef}
                     className="input w-full h-64 resize-y font-mono text-xs leading-relaxed"
                     value={form.detail_html_ko ?? ""}
                     onChange={(e) => setForm((p) => ({ ...p, detail_html_ko: e.target.value }))}
+                    onSelect={() => captureDetailSelection("ko")}
+                    onKeyUp={() => captureDetailSelection("ko")}
+                    onClick={() => captureDetailSelection("ko")}
                     placeholder="<p>...</p>"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">제품 상세설명 (영문) HTML</label>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label className="block text-sm font-medium text-gray-700">제품 상세설명 (영문) HTML</label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm shrink-0"
+                      disabled={detailImgUploading !== null || uploading}
+                      onMouseDown={(e) => onDetailImgPickMouseDown("en", e)}
+                      onClick={() => openDetailHtmlImagePicker("en")}
+                    >
+                      {detailImgUploading === "en" ? "업로드 중…" : "이미지 업로드"}
+                    </button>
+                  </div>
                   <textarea
+                    ref={detailHtmlEnRef}
                     className="input w-full h-64 resize-y font-mono text-xs leading-relaxed"
                     value={form.detail_html_en ?? ""}
                     onChange={(e) => setForm((p) => ({ ...p, detail_html_en: e.target.value }))}
+                    onSelect={() => captureDetailSelection("en")}
+                    onKeyUp={() => captureDetailSelection("en")}
+                    onClick={() => captureDetailSelection("en")}
                     placeholder="<p>...</p>"
                   />
                 </div>
