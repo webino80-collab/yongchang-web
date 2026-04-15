@@ -8,7 +8,7 @@
  * 보조: SMTP_USER + SMTP_PASS 설정 시 SMTP (MAIL_WORKER 미설정 시)
  *
  * Secrets:
- *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (DB 행 검증용, 권장)
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (DB 행 검증 — 없으면 알림 메일만 생략하고 200, 접수는 이미 RPC로 DB 반영됨)
  *   MAIL_WORKER_URL, MAIL_WORKER_SECRET
  *   ADMIN_EMAIL (기본 ycpbm@hanmail.net)
  *   SMTP_* (선택)
@@ -16,6 +16,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendContactInquiryViaSmtp } from "../_shared/send_contact_smtp.ts";
+
+/** 브라우저에서 supabase.functions.invoke 시 cross-origin → OPTIONS·본문 응답에 필수 */
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, prefer",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
+
+function withCors(
+  body: BodyInit | null,
+  status: number,
+  extraHeaders: Record<string, string> = {},
+): Response {
+  return new Response(body, {
+    status,
+    headers: { ...corsHeaders, ...extraHeaders },
+  });
+}
 
 const NOTIFY_SUBJECT =
   "[신규 문의 접수] 홈페이지를 통해 새로운 문의가 도착했습니다";
@@ -54,13 +74,11 @@ function validateRecord(record: ContactPayload): string | null {
   return null;
 }
 
-async function verifyContactRowMatchesDb(record: ContactPayload): Promise<boolean> {
-  const url = Deno.env.get("SUPABASE_URL")?.trim();
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
-  if (!url || !key) {
-    console.error("send-contact-mail: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 없음 — 검증 생략 불가");
-    return false;
-  }
+async function verifyContactRowMatchesDb(
+  record: ContactPayload,
+  url: string,
+  key: string,
+): Promise<boolean> {
   const supabase = createClient(url, key);
   const { data, error } = await supabase
     .from("contact_inquiries")
@@ -73,14 +91,16 @@ async function verifyContactRowMatchesDb(record: ContactPayload): Promise<boolea
   const norm = (s: string | null | undefined) => String(s ?? "").trim();
   const normMsg = (s: string | null | undefined) =>
     norm(s).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const normPhone = (s: string | null | undefined) => norm(s).replace(/\s/g, "");
   const pe = norm(record.email).toLowerCase();
   const de = norm(data.email).toLowerCase();
+  // id로 조회된 행과, 방금 RPC로 받은 페이로드가 같은 문의인지 (전화만 공백 무시)
   return (
     norm(data.name) === norm(record.name) &&
     de === pe &&
     norm(data.subject) === norm(record.subject) &&
     normMsg(data.message) === normMsg(record.message) &&
-    norm(data.phone ?? "") === norm(record.phone ?? "")
+    normPhone(data.phone ?? "") === normPhone(record.phone ?? "")
   );
 }
 
@@ -132,8 +152,12 @@ async function sendViaMailWorker(adminEmail: string, record: ContactPayload): Pr
 }
 
 serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return withCors(null, 204);
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return withCors("Method Not Allowed", 405, { "Content-Type": "text/plain; charset=utf-8" });
   }
 
   try {
@@ -141,27 +165,43 @@ serve(async (req: Request) => {
     const record = body?.record;
 
     if (!record) {
-      return new Response(JSON.stringify({ ok: false, error: "invalid_payload" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
+      return withCors(JSON.stringify({ ok: false, error: "invalid_payload" }), 400, {
+        "Content-Type": "application/json",
       });
     }
 
     const verr = validateRecord(record);
     if (verr) {
       console.error("send-contact-mail: validation", verr, record);
-      return new Response(JSON.stringify({ ok: false, error: "validation", field: verr }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
+      return withCors(JSON.stringify({ ok: false, error: "validation", field: verr }), 400, {
+        "Content-Type": "application/json",
       });
     }
 
-    const verified = await verifyContactRowMatchesDb(record);
+    const url = Deno.env.get("SUPABASE_URL")?.trim() ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim() ?? "";
+
+    if (!url || !serviceKey) {
+      console.warn(
+        "send-contact-mail: SUPABASE_SERVICE_ROLE_KEY 미설정 — DB 검증·메일 생략, 클라이언트는 접수 성공 처리",
+      );
+      return withCors(
+        JSON.stringify({
+          ok: true,
+          mailSent: false,
+          reason: "missing_service_role",
+          hint: "Edge Function Secrets에 SUPABASE_SERVICE_ROLE_KEY 추가",
+        }),
+        200,
+        { "Content-Type": "application/json" },
+      );
+    }
+
+    const verified = await verifyContactRowMatchesDb(record, url, serviceKey);
     if (!verified) {
       console.error("send-contact-mail: db verification failed", record.id);
-      return new Response(JSON.stringify({ ok: false, error: "forbidden", detail: "row_mismatch" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
+      return withCors(JSON.stringify({ ok: false, error: "forbidden", detail: "row_mismatch" }), 403, {
+        "Content-Type": "application/json",
       });
     }
 
@@ -176,14 +216,19 @@ serve(async (req: Request) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error("send-contact-mail: mail worker failed", msg);
-        return new Response(JSON.stringify({ ok: false, error: "mail_worker_failed", detail: msg }), {
-          status: 502,
-          headers: { "Content-Type": "application/json" },
-        });
+        return withCors(
+          JSON.stringify({
+            ok: true,
+            mailSent: false,
+            reason: "mail_worker_failed",
+            detail: msg,
+          }),
+          200,
+          { "Content-Type": "application/json" },
+        );
       }
-      return new Response(JSON.stringify({ ok: true, via: "mail_worker" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
+      return withCors(JSON.stringify({ ok: true, mailSent: true, via: "mail_worker" }), 200, {
+        "Content-Type": "application/json",
       });
     }
 
@@ -196,24 +241,35 @@ serve(async (req: Request) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error("send-contact-mail: smtp failed", msg);
-        return new Response(JSON.stringify({ ok: false, error: "smtp_failed", detail: msg }), {
-          status: 502,
-          headers: { "Content-Type": "application/json" },
-        });
+        return withCors(
+          JSON.stringify({
+            ok: true,
+            mailSent: false,
+            reason: "smtp_failed",
+            detail: msg,
+          }),
+          200,
+          { "Content-Type": "application/json" },
+        );
       }
-      return new Response(JSON.stringify({ ok: true, via: "smtp" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
+      return withCors(JSON.stringify({ ok: true, mailSent: true, via: "smtp" }), 200, {
+        "Content-Type": "application/json",
       });
     }
 
-    console.error("send-contact-mail: MAIL_WORKER_* 또는 SMTP 미설정");
-    return new Response(JSON.stringify({ ok: false, error: "mail_not_configured" }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.warn("send-contact-mail: MAIL_WORKER_* 또는 SMTP 미설정 — 알림 메일 생략");
+    return withCors(
+      JSON.stringify({
+        ok: true,
+        mailSent: false,
+        reason: "mail_not_configured",
+        hint: "MAIL_WORKER_URL·MAIL_WORKER_SECRET 또는 SMTP_* 설정",
+      }),
+      200,
+      { "Content-Type": "application/json" },
+    );
   } catch (err) {
     console.error("send-contact-mail error:", err);
-    return new Response("Internal Server Error", { status: 500 });
+    return withCors("Internal Server Error", 500, { "Content-Type": "text/plain; charset=utf-8" });
   }
 });
