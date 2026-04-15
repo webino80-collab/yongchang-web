@@ -250,6 +250,7 @@ export type Database = {
           reply_content?: string | null;
           replied_at?: string | null;
         };
+        Delete: Record<string, never>;
         Relationships: [];
       };
       site_config: {

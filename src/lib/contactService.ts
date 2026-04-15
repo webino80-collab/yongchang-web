@@ -86,4 +86,9 @@ export const contactService = {
       .eq("id", id);
     if (error) throw error;
   },
+
+  async deleteInquiry(id: string) {
+    const { error } = await supabase.from("contact_inquiries").delete().eq("id", id);
+    if (error) throw error;
+  },
 };

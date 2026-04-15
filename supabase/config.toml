@@ -3,3 +3,6 @@
 # 대신 Edge Function에서 DB에 저장된 행과 페이로드 일치 여부를 검증합니다.
 [functions.send-contact-mail]
 verify_jwt = false
+
+[functions.keep-alive]
+verify_jwt = false

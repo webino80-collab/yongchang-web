@@ -37,6 +37,17 @@ export function InquiriesPage() {
     },
   });
 
+  const deleteInquiry = useMutation({
+    mutationFn: (id: string) => contactService.deleteInquiry(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      if (selected?.id === id) {
+        setSelected(null);
+        setReplyText("");
+      }
+    },
+  });
+
   const handleOpen = (inquiry: ContactInquiry) => {
     setSelected(inquiry);
     setReplyText(inquiry.reply_content ?? "");
@@ -143,13 +154,33 @@ export function InquiriesPage() {
               />
             </div>
 
-            <button
-              onClick={() => sendReply.mutate({ id: selected.id, content: replyText })}
-              disabled={!replyText.trim() || sendReply.isPending}
-              className="btn btn-primary w-full"
-            >
-              {sendReply.isPending ? "저장 중..." : "답변 저장"}
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => sendReply.mutate({ id: selected.id, content: replyText })}
+                disabled={!replyText.trim() || sendReply.isPending}
+                className="btn btn-primary flex-1"
+              >
+                {sendReply.isPending ? "저장 중..." : "답변 저장"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      "이 문의를 삭제할까요? 삭제하면 복구할 수 없습니다.",
+                    )
+                  ) {
+                    return;
+                  }
+                  deleteInquiry.mutate(selected.id);
+                }}
+                disabled={deleteInquiry.isPending}
+                className="btn border border-red-300 text-red-700 bg-white hover:bg-red-50 flex-1"
+              >
+                {deleteInquiry.isPending ? "삭제 중..." : "문의 삭제"}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="card p-8 flex items-center justify-center text-gray-300">
