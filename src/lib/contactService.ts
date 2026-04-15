@@ -2,17 +2,27 @@ import { supabase } from "./supabaseClient";
 import type { ContactInquiry } from "@/types";
 
 export const contactService = {
+  /**
+   * 문의 저장 후 메일은 Supabase Database Webhook → Edge Function `send-contact-mail`에서
+   * SMTP(다음 등) 또는 선택적 Cloudflare Worker로 발송합니다.
+   */
   async submit(payload: {
     name: string;
     email: string;
     phone?: string;
     subject: string;
     message: string;
+    /** 숨김 필드(스팸 방지) — DB에 저장하지 않음 */
+    hp?: string;
   }): Promise<void> {
-    const { error } = await supabase
-      .from("contact_inquiries")
-      .insert(payload);
-    // INSERT 후 Supabase Database Webhook이 send-contact-mail Edge Function 호출
+    const row = {
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      subject: payload.subject,
+      message: payload.message,
+    };
+    const { error } = await supabase.from("contact_inquiries").insert(row);
     if (error) throw error;
   },
 

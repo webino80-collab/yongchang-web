@@ -1,14 +1,22 @@
 /**
- * send-contact-mail
- * contact_inquiries INSERT 트리거 → 관리자에게 문의 접수 메일 발송
- * 현재 그누보드: page/mail_send_update.php + lib/mailer.lib.php 대체
+ * send-contact-mail (Supabase Database Webhook — contact_inquiries INSERT)
  *
- * 환경변수 (Supabase Dashboard > Edge Functions > Secrets):
- *   RESEND_API_KEY  - Resend.com API 키
- *   ADMIN_EMAIL     - 관리자 수신 이메일
- *   SITE_NAME       - 사이트 이름
+ * 1) SMTP (다음/한메일 등): SMTP_USER + SMTP_PASS 설정 시 `send_contact_smtp.ts` 사용
+ * 2) 보조: CF Worker — CF_CONTACT_MAIL_WORKER_URL + CF_CONTACT_MAIL_SECRET (SMTP 미설정 시)
+ *
+ * Secrets 예시 (다음 메일):
+ *   SMTP_HOST=smtp.daum.net
+ *   SMTP_PORT=465
+ *   SMTP_USER=발신계정@daum.net
+ *   SMTP_PASS=****
+ *   SMTP_FROM=no-reply@yongchang.co.kr   (실제로 다음 SMTP에 로그인 가능한 주소여야 함)
+ *   ADMIN_EMAIL=ycpbm@hanmail.net
+ *   SITE_NAME=(주)용창
+ *
+ * 587 + STARTTLS: SMTP_PORT=587, SMTP_STARTTLS=1, connection은 STARTTLS 경로
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { sendContactInquiryViaSmtp } from "../_shared/send_contact_smtp.ts";
 
 interface ContactPayload {
   id: string;
@@ -20,6 +28,20 @@ interface ContactPayload {
   created_at: string;
 }
 
+function validateRecord(record: ContactPayload): string | null {
+  const name = String(record.name ?? "").trim();
+  const email = String(record.email ?? "").trim();
+  const subject = String(record.subject ?? "").trim();
+  const message = String(record.message ?? "").trim();
+  if (!name || name.length > 80) return "name";
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "email";
+  if (!subject || subject.length > 200) return "subject";
+  if (message.length < 10 || message.length > 4000) return "message";
+  const phone = String(record.phone ?? "").trim();
+  if (phone.length > 40) return "phone";
+  return null;
+}
+
 serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -29,101 +51,78 @@ serve(async (req: Request) => {
     const body = (await req.json()) as { record?: ContactPayload };
     const record = body?.record;
 
-    if (
-      !record ||
-      typeof record.name !== "string" ||
-      typeof record.email !== "string" ||
-      typeof record.subject !== "string" ||
-      typeof record.message !== "string"
-    ) {
-      console.error("send-contact-mail: invalid or missing record", body);
+    if (!record) {
       return new Response(JSON.stringify({ ok: false, error: "invalid_payload" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const adminEmail = Deno.env.get("ADMIN_EMAIL") ?? "admin@example.com";
-    const siteName = Deno.env.get("SITE_NAME") ?? "사이트";
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not set");
-      return new Response("Mail config missing", { status: 500 });
+    const verr = validateRecord(record);
+    if (verr) {
+      console.error("send-contact-mail: validation", verr, record);
+      return new Response(JSON.stringify({ ok: false, error: "validation", field: verr }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const emailBody = `
-      <h2>[${siteName}] 새 문의가 접수되었습니다.</h2>
-      <table style="border-collapse:collapse;width:100%;font-size:14px;">
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;width:120px;">이름</th><td style="padding:8px;">${record.name}</td></tr>
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;">이메일</th><td style="padding:8px;">${record.email}</td></tr>
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;">연락처</th><td style="padding:8px;">${record.phone ?? "-"}</td></tr>
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;">제목</th><td style="padding:8px;">${record.subject}</td></tr>
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;vertical-align:top;">내용</th><td style="padding:8px;white-space:pre-wrap;">${record.message}</td></tr>
-        <tr><th style="background:#f5f5f5;padding:8px;text-align:left;">접수일시</th><td style="padding:8px;">${record.created_at}</td></tr>
-      </table>
-    `;
+    const smtpUser = Deno.env.get("SMTP_USER")?.trim();
+    const smtpPass = Deno.env.get("SMTP_PASS")?.trim();
 
-    // 문의자에게 자동 회신 메일
-    const autoReplyBody = `
-      <h2>문의가 접수되었습니다.</h2>
-      <p>안녕하세요, <strong>${record.name}</strong>님.<br/>
-      아래 내용으로 문의가 접수되었습니다. 빠른 시일 내에 답변 드리겠습니다.</p>
-      <hr/>
-      <p><strong>제목:</strong> ${record.subject}</p>
-      <p><strong>내용:</strong><br/><pre style="white-space:pre-wrap;">${record.message}</pre></p>
-      <hr/>
-      <p style="color:#888;font-size:12px;">본 메일은 자동 발송입니다. 회신하지 마세요.</p>
-    `;
-
-    const resendUrl = "https://api.resend.com/emails";
-    // Resend 무료 플랜 기본 발신 주소 (도메인 인증 전까지 사용)
-    const fromAddress = `${siteName} <onboarding@resend.dev>`;
-
-    // 관리자 알림 메일
-    const adminRes = await fetch(resendUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [adminEmail],
-        subject: `[문의] ${record.subject} - ${record.name}`,
-        html: emailBody,
-        reply_to: record.email,
-      }),
-    });
-    if (!adminRes.ok) {
-      const err = await adminRes.text();
-      console.error("관리자 메일 발송 실패:", err);
-      return new Response(
-        JSON.stringify({ ok: false, error: "admin_mail_failed", detail: err }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
-      );
+    if (smtpUser && smtpPass) {
+      try {
+        await sendContactInquiryViaSmtp(record);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("send-contact-mail: smtp failed", msg);
+        return new Response(JSON.stringify({ ok: false, error: "smtp_failed", detail: msg }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ ok: true, via: "smtp" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // 문의자 자동 회신
-    const replyRes = await fetch(resendUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [record.email],
-        subject: `[${siteName}] 문의가 접수되었습니다: ${record.subject}`,
-        html: autoReplyBody,
-      }),
-    });
-    if (!replyRes.ok) {
-      const err = await replyRes.text();
-      console.error("자동회신 발송 실패:", err);
+    const workerUrl = Deno.env.get("CF_CONTACT_MAIL_WORKER_URL")?.trim();
+    const workerSecret = Deno.env.get("CF_CONTACT_MAIL_SECRET")?.trim();
+
+    if (workerUrl && workerSecret) {
+      const res = await fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Contact-Mail-Secret": workerSecret,
+        },
+        body: JSON.stringify({
+          name: record.name,
+          email: record.email,
+          phone: record.phone ?? "",
+          subject: record.subject,
+          message: record.message,
+          hp: "",
+        }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("send-contact-mail: worker failed", res.status, t);
+        return new Response(JSON.stringify({ ok: false, error: "worker_failed", detail: t }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ ok: true, via: "worker" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    console.log("send-contact-mail: SMTP·Worker 미설정 — 메일 미발송");
+    return new Response(JSON.stringify({ ok: true, skipped: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

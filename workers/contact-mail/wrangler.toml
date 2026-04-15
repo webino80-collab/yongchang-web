@@ -1,0 +1,14 @@
+# Cloudflare 대시보드에서 Email Routing 활성화 후,
+# ycpbm@hanmail.net 을 목적지(검증된 주소)로 등록한 뒤 배포하세요.
+# 발신 no-reply@yongchang.co.kr 은 Email Routing이 켜진 동일 도메인이어야 합니다.
+name = "yongchang-contact-mail"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+[vars]
+# 쉼표로 구분. 비우면 개발용으로 모든 Origin 허용(운영에서는 반드시 지정 권장)
+# ALLOWED_ORIGINS = "https://yongchang.co.kr,https://www.yongchang.co.kr,http://localhost:5173"
+
+[[send_email]]
+name = "NOTIFY"
+destination_address = "ycpbm@hanmail.net"

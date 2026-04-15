@@ -15,6 +15,8 @@ const schema = z.object({
   inquiry_type: z.string().min(1, "문의 유형을 선택하세요"),
   subject:      z.string().min(1, "제목을 입력하세요").max(100),
   message:      z.string().min(10, "내용을 10자 이상 입력하세요").max(1300),
+  /** 스팸 봇용 덫 — 사람은 비워 둠 */
+  website: z.string().refine((v) => !v.trim(), { message: "접수가 거부되었습니다." }),
   privacy:      z.boolean().refine((v) => v === true, { message: "개인정보 수집·이용에 동의해주세요." }),
 });
 
@@ -67,7 +69,7 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { privacy: undefined as unknown as true },
+    defaultValues: { privacy: undefined as unknown as true, website: "" },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -77,6 +79,7 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
         email:   data.email,
         subject: `[${data.inquiry_type}] ${data.subject}`,
         message: data.message,
+        hp:      data.website ?? "",
       });
       setSubmitted(true);
       reset();
@@ -247,7 +250,11 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
     <>
       {showPrivacy && <PrivacyModal />}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+        style={{ position: "relative", display: "flex", flexDirection: "column", gap: "2rem" }}
+      >
 
         {/* 전역 에러 */}
         {errors.root && (
@@ -351,6 +358,25 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
             {charCount} / 1,300 {lang === "ko" ? "Byte" : "Byte"}
           </div>
         </Field>
+
+        <input
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          {...register("website")}
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0,0,0,0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        />
 
         {/* 제출 버튼 */}
         <div style={{ textAlign: "center", paddingTop: "1.6rem" }}>
