@@ -158,20 +158,32 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
               <>
                 문의 내용은 저장되었으나, 관리자 메일(
                 <strong>ycpbm@hanmail.net</strong> 등)로 자동 알림이 발송되지 않았을 수 있습니다.
-                {import.meta.env.DEV && (
-                  <span style={{ display: "block", marginTop: "0.6rem", fontSize: "1.2rem", color: "#78350f" }}>
-                    ({mailNotifyMiss})
-                  </span>
-                )}
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: "0.8rem",
+                    fontSize: "1.15rem",
+                    color: "#78350f",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  사유(서버 응답): {mailNotifyMiss}
+                </span>
               </>
             ) : (
               <>
                 Your message was saved, but the admin notification email may not have been sent.
-                {import.meta.env.DEV && (
-                  <span style={{ display: "block", marginTop: "0.6rem", fontSize: "1.2rem", color: "#78350f" }}>
-                    ({mailNotifyMiss})
-                  </span>
-                )}
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: "0.8rem",
+                    fontSize: "1.15rem",
+                    color: "#78350f",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  Reason: {mailNotifyMiss}
+                </span>
               </>
             )}
           </p>
