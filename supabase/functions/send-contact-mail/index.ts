@@ -264,7 +264,8 @@ serve(async (req: Request) => {
         ok: true,
         mailSent: false,
         reason: "mail_not_configured",
-        hint: "MAIL_WORKER_URL·MAIL_WORKER_KEY(또는 MAIL_WORKER_SECRET) 또는 SMTP_* 설정",
+        hint:
+          "Supabase → Project Settings → Edge Functions → Secrets: (1) MAIL_WORKER_URL=https://…workers.dev (2) MAIL_WORKER_KEY=Worker Bearer 비밀. 대안: SMTP_USER+SMTP_PASS",
       }),
       200,
       { "Content-Type": "application/json" },
