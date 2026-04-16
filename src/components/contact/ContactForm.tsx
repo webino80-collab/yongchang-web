@@ -61,6 +61,8 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
   const [submitted,   setSubmitted]   = useState(false);
   const [charCount,   setCharCount]   = useState(0);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  /** 접수는 됐으나 send-contact-mail 이 알림을 못 보낸 경우 안내 */
+  const [mailNotifyMiss, setMailNotifyMiss] = useState<string | null>(null);
 
   const {
     register,
@@ -75,7 +77,7 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await contactService.submit({
+      const mailResult = await contactService.submit({
         name:    data.name,
         email:   data.email,
         phone:   data.phone?.trim() || undefined,
@@ -83,6 +85,11 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
         message: data.message,
         hp:      data.website ?? "",
       });
+      setMailNotifyMiss(
+        mailResult.mailSent
+          ? null
+          : [mailResult.mailSkipReason, mailResult.mailSkipHint].filter(Boolean).join(" — ") || null,
+      );
       setSubmitted(true);
       reset();
       setCharCount(0);
@@ -133,8 +140,47 @@ export function ContactForm({ lang = "ko" }: ContactFormProps) {
             ? "빠른 시일 내에 담당자가 연락드리겠습니다.\n업무시간 내 순차적으로 답변드립니다."
             : "Our team will contact you shortly.\nWe respond during business hours in order."}
         </p>
+        {mailNotifyMiss && (
+          <p
+            style={{
+              fontSize: "1.3rem",
+              color: "#92400e",
+              background: "#fffbeb",
+              border: "1px solid #fcd34d",
+              borderRadius: "0.6rem",
+              padding: "1.2rem 1.6rem",
+              marginBottom: "2rem",
+              lineHeight: 1.6,
+              textAlign: "left",
+            }}
+          >
+            {lang === "ko" ? (
+              <>
+                문의 내용은 저장되었으나, 관리자 메일(
+                <strong>ycpbm@hanmail.net</strong> 등)로 자동 알림이 발송되지 않았을 수 있습니다.
+                {import.meta.env.DEV && (
+                  <span style={{ display: "block", marginTop: "0.6rem", fontSize: "1.2rem", color: "#78350f" }}>
+                    ({mailNotifyMiss})
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                Your message was saved, but the admin notification email may not have been sent.
+                {import.meta.env.DEV && (
+                  <span style={{ display: "block", marginTop: "0.6rem", fontSize: "1.2rem", color: "#78350f" }}>
+                    ({mailNotifyMiss})
+                  </span>
+                )}
+              </>
+            )}
+          </p>
+        )}
         <button
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            setSubmitted(false);
+            setMailNotifyMiss(null);
+          }}
           style={{
             padding: "1rem 3rem", border: "1px solid #222", borderRadius: "2rem",
             background: "none", cursor: "pointer", fontSize: "1.4rem", fontWeight: 600, color: "#222",

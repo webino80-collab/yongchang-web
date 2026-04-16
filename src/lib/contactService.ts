@@ -41,7 +41,12 @@ export const contactService = {
     message: string;
     /** 숨김 필드(스팸 방지) — DB에 저장하지 않음 */
     hp?: string;
-  }): Promise<void> {
+  }): Promise<{
+    mailSent: boolean;
+    /** mailSent 가 false 일 때 Edge JSON 의 reason (예: mail_not_configured, missing_service_role) */
+    mailSkipReason?: string;
+    mailSkipHint?: string;
+  }> {
     // anon은 contact_inquiries SELECT RLS로 insert().select() 불가 → RPC로 INSERT 후 행 반환
     const { data, error } = await supabase.rpc("create_contact_inquiry", {
       p_name: payload.name,
@@ -55,14 +60,40 @@ export const contactService = {
 
     const row = unwrapCreateContactRow(data);
 
-    const { error: fnError } = await supabase.functions.invoke("send-contact-mail", {
+    type MailFnBody = {
+      ok?: boolean;
+      mailSent?: boolean;
+      reason?: string;
+      hint?: string;
+      detail?: string;
+      error?: string;
+    };
+
+    const { data: fnData, error: fnError } = await supabase.functions.invoke<MailFnBody>("send-contact-mail", {
       body: { record: row },
     });
 
     if (fnError) {
       console.error("send-contact-mail invoke:", fnError);
+      if (fnError instanceof FunctionsHttpError) {
+        throw new Error(await messageFromFunctionsHttpError(fnError));
+      }
       throw fnError;
     }
+
+    const out = fnData;
+    if (out && out.ok === false) {
+      throw new Error(
+        [out.error, out.detail].filter(Boolean).join(" — ") || "send-contact-mail rejected",
+      );
+    }
+
+    const mailSent = out?.mailSent !== false;
+    return {
+      mailSent,
+      mailSkipReason: mailSent ? undefined : out?.reason,
+      mailSkipHint: mailSent ? undefined : (out?.hint ?? out?.detail),
+    };
   },
 
   // 관리자 전용
