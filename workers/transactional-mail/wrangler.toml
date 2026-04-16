@@ -1,5 +1,9 @@
-# Email Routing이 켜진 도메인에서 발신 주소를 사용하세요.
-# destination_address 없음 = Email Routing에 검증된 수신 주소로만 발송 가능(스팸 방지 정책).
+# Email Routing이 켜진 도메인(yongchang.co.kr)에서 발신(FROM)을 사용하세요.
+#
+# 수신(TO): send_email 은 "Email Routing → 목적지 주소"에 검증된 주소로만 발송 가능합니다.
+# "destination address is not a verified address" → 관리자 메일(ycpbm@hanmail.net 등)을
+# 대시보드 Email Routing에서 목적지로 추가하고, 인증 메일로 검증 완료해야 합니다.
+# (임의의 고객 @gmail.com 등으로내려면 send_email 대신 SMTP Worker smtp-mail-api 사용)
 # 배포: cd workers/transactional-mail && npm i && npx wrangler secret put MAIL_WORKER_KEY
 #   (구명칭 MAIL_WORKER_SECRET 도 동일 동작 — Supabase MAIL_WORKER_KEY 와 값 맞출 것)
 name = "yongchang-transactional-mail"
