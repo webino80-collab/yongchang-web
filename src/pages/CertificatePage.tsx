@@ -40,7 +40,9 @@ function GalleryThumb({ cert }: { cert: Certificate }) {
           <img
             src={cert.image_url}
             alt={title}
-            className="max-h-full max-w-full object-contain drop-shadow-sm"
+            className="max-h-full max-w-full object-contain drop-shadow-sm bg-white"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="text-xs text-gray-400">{lang === "ko" ? "이미지 없음" : "No image"}</div>

@@ -238,10 +238,19 @@ function ProductLandingCardMedia({
   imageUrl: string | null;
 }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-[1.2rem] bg-[#e5e5e5]" style={{ aspectRatio: "4/3" }}>
+    <div
+      className={`relative w-full overflow-hidden rounded-[1.2rem] ${imageUrl ? "bg-white" : "bg-[#e5e5e5]"}`}
+      style={{ aspectRatio: "4/3" }}
+    >
       <div className="absolute inset-0">
         {imageUrl ? (
-          <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+          <img
+            src={imageUrl}
+            alt={title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <DefaultProductImage category={category} title={title} />
         )}
@@ -276,10 +285,18 @@ function BrowseProductCard({ product, lang }: { product: Product; lang: string }
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.4 }}
       >
-        <div className="relative aspect-square overflow-hidden rounded-[1.2rem] bg-[#e8e8e8]">
+        <div
+          className={`relative aspect-square overflow-hidden rounded-[1.2rem] ${coverUrl ? "bg-white" : "bg-[#e8e8e8]"}`}
+        >
           <div className="absolute inset-0">
             {coverUrl ? (
-              <img src={coverUrl} alt={title ?? ""} className="h-full w-full object-cover" />
+              <img
+                src={coverUrl}
+                alt={title ?? ""}
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               <DefaultProductImage category={product.category} title={title ?? ""} />
             )}

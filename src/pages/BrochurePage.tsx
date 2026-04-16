@@ -56,7 +56,8 @@ function BrochureCard({ b, lang }: { b: Brochure; lang: string }) {
         style={{
           width: 140,
           flexShrink: 0,
-          backgroundColor: "#f0f4f8",
+          /* 썸네일 URL 있을 때: 로딩 전 파란 톤 박스가 비치지 않도록 흰 배경 */
+          backgroundColor: b.cover_image_url ? "#fff" : "#f0f4f8",
           overflow: "hidden",
           position: "relative",
         }}
@@ -66,6 +67,8 @@ function BrochureCard({ b, lang }: { b: Brochure; lang: string }) {
             src={b.cover_image_url}
             alt={title}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div
