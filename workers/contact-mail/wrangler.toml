@@ -12,3 +12,20 @@ compatibility_date = "2025-04-01"
 [[send_email]]
 name = "NOTIFY"
 destination_address = "ycpbm@hanmail.net"
+
+# Workers Logs / Observability — 대시보드와 배포 설정 일치
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+head_sampling_rate = 1
+persist = true
+

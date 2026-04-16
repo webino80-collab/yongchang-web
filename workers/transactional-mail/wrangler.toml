@@ -13,3 +13,19 @@ FROM_NAME = "(주)용창"
 [[send_email]]
 name = "MAIL"
 allowed_sender_addresses = ["no-reply@yongchang.co.kr"]
+
+# Workers Logs / Observability — 대시보드와 배포 설정 일치 (https://developers.cloudflare.com/workers/observability/logs/workers-logs/)
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+head_sampling_rate = 1
+persist = true
