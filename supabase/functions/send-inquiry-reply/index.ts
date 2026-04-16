@@ -6,10 +6,11 @@
  * 인증: config.toml 에서 verify_jwt=false — 게이트웨이 401 회피. 본 함수에서 Authorization Bearer + getUser + profiles.is_admin 검사.
  *
  * Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
- *          MAIL_WORKER_URL, MAIL_WORKER_SECRET (권장) 또는 SMTP_*
+ *          MAIL_WORKER_URL, MAIL_WORKER_KEY (Bearer; 구명칭 MAIL_WORKER_SECRET 호환) 또는 SMTP_*
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getMailWorkerBearerToken, getMailWorkerUrl } from "../_shared/mail_worker_env.ts";
 import { sendHtmlToAddressViaSmtp } from "../_shared/send_contact_smtp.ts";
 
 const corsHeaders: Record<string, string> = {
@@ -58,16 +59,16 @@ interface InquiryRow {
 }
 
 async function sendViaMailWorker(to: string, subject: string, html: string): Promise<void> {
-  const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.replace(/\/$/, "");
-  const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET")?.trim();
-  if (!mailWorkerUrl || !mailWorkerSecret) {
-    throw new Error("MAIL_WORKER_URL / MAIL_WORKER_SECRET 미설정");
+  const mailWorkerUrl = getMailWorkerUrl();
+  const bearer = getMailWorkerBearerToken();
+  if (!mailWorkerUrl || !bearer) {
+    throw new Error("MAIL_WORKER_URL / MAIL_WORKER_KEY 미설정");
   }
 
   const res = await fetch(mailWorkerUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${mailWorkerSecret}`,
+      Authorization: `Bearer ${bearer}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ to, subject, html }),
@@ -207,8 +208,8 @@ serve(async (req: Request) => {
       replyContent,
     ].join("\n");
 
-    const mailUrl = Deno.env.get("MAIL_WORKER_URL")?.trim();
-    const mailSecret = Deno.env.get("MAIL_WORKER_SECRET")?.trim();
+    const mailUrl = getMailWorkerUrl();
+    const mailSecret = getMailWorkerBearerToken();
     const smtpUser = Deno.env.get("SMTP_USER")?.trim();
     const smtpPass = Deno.env.get("SMTP_PASS")?.trim();
 

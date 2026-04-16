@@ -4,11 +4,12 @@
  * 현재 그누보드: bbs/write_update_mail.php 대체
  *
  * 환경변수:
- *   MAIL_WORKER_URL, MAIL_WORKER_SECRET, SITE_NAME, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ *   MAIL_WORKER_URL, MAIL_WORKER_KEY (구 MAIL_WORKER_SECRET), SITE_NAME, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *   (Cloudflare Workers transactional-mail 발송 API)
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getMailWorkerBearerToken, getMailWorkerUrl } from "../_shared/mail_worker_env.ts";
 
 interface PostRecord {
   id: string;
@@ -37,12 +38,12 @@ serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.replace(/\/$/, "");
-    const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET");
+    const mailWorkerUrl = getMailWorkerUrl();
+    const mailWorkerSecret = getMailWorkerBearerToken();
     const siteName = Deno.env.get("SITE_NAME") ?? "사이트";
 
     if (!mailWorkerUrl || !mailWorkerSecret) {
-      console.error("MAIL_WORKER_URL or MAIL_WORKER_SECRET not set");
+      console.error("MAIL_WORKER_URL or MAIL_WORKER_KEY (or MAIL_WORKER_SECRET) not set");
       return new Response("Mail config missing", { status: 500 });
     }
 

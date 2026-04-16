@@ -4,17 +4,18 @@
  * 호출: (1) 클라이언트가 `contact_inquiries` INSERT 직후 `functions.invoke`
  *       (2) 선택: Database Webhook — 이 경우 (1)과 동시에 쓰면 메일이 중복됩니다. 웹훅을 끄세요.
  *
- * 발송: MAIL_WORKER_URL + MAIL_WORKER_SECRET → Cloudflare Workers `send_email` (transactional-mail)
+ * 발송: MAIL_WORKER_URL + MAIL_WORKER_KEY → Cloudflare Workers `send_email` (transactional-mail)
  * 보조: SMTP_USER + SMTP_PASS 설정 시 SMTP (MAIL_WORKER 미설정 시)
  *
  * Secrets:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (DB 행 검증 — 없으면 알림 메일만 생략하고 200, 접수는 이미 RPC로 DB 반영됨)
- *   MAIL_WORKER_URL, MAIL_WORKER_SECRET
+ *   MAIL_WORKER_URL, MAIL_WORKER_KEY (구명칭 MAIL_WORKER_SECRET 호환)
  *   ADMIN_EMAIL (기본 ycpbm@hanmail.net)
  *   SMTP_* (선택)
  */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getMailWorkerBearerToken, getMailWorkerUrl } from "../_shared/mail_worker_env.ts";
 import { sendContactInquiryViaSmtp } from "../_shared/send_contact_smtp.ts";
 
 /** 브라우저에서 supabase.functions.invoke 시 cross-origin → OPTIONS·본문 응답에 필수 */
@@ -126,16 +127,16 @@ function buildAdminNotifyHtml(record: ContactPayload): string {
 }
 
 async function sendViaMailWorker(adminEmail: string, record: ContactPayload): Promise<void> {
-  const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.replace(/\/$/, "");
-  const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET")?.trim();
-  if (!mailWorkerUrl || !mailWorkerSecret) {
-    throw new Error("MAIL_WORKER_URL / MAIL_WORKER_SECRET 미설정");
+  const mailWorkerUrl = getMailWorkerUrl();
+  const bearer = getMailWorkerBearerToken();
+  if (!mailWorkerUrl || !bearer) {
+    throw new Error("MAIL_WORKER_URL / MAIL_WORKER_KEY 미설정");
   }
 
   const res = await fetch(mailWorkerUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${mailWorkerSecret}`,
+      Authorization: `Bearer ${bearer}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -207,8 +208,8 @@ serve(async (req: Request) => {
 
     const adminEmail = Deno.env.get("ADMIN_EMAIL")?.trim() || "ycpbm@hanmail.net";
 
-    const mailWorkerUrl = Deno.env.get("MAIL_WORKER_URL")?.trim();
-    const mailWorkerSecret = Deno.env.get("MAIL_WORKER_SECRET")?.trim();
+    const mailWorkerUrl = getMailWorkerUrl();
+    const mailWorkerSecret = getMailWorkerBearerToken();
 
     if (mailWorkerUrl && mailWorkerSecret) {
       try {
@@ -263,7 +264,7 @@ serve(async (req: Request) => {
         ok: true,
         mailSent: false,
         reason: "mail_not_configured",
-        hint: "MAIL_WORKER_URL·MAIL_WORKER_SECRET 또는 SMTP_* 설정",
+        hint: "MAIL_WORKER_URL·MAIL_WORKER_KEY(또는 MAIL_WORKER_SECRET) 또는 SMTP_* 설정",
       }),
       200,
       { "Content-Type": "application/json" },
