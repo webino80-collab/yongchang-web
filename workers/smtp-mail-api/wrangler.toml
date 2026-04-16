@@ -1,0 +1,8 @@
+# SMTP 발송 API (Supabase Edge 등에서 MAIL_WORKER_URL 로 호출)
+# 배포: cd workers/smtp-mail-api && npm i && npx wrangler secret put MAIL_WORKER_KEY
+#        npx wrangler secret put SMTP_USER && npx wrangler secret put SMTP_PASS
+#        (선택) npx wrangler secret put SMTP_FROM — 없으면 SMTP_USER 과 동일 취급
+name = "yongchang-smtp-mail-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
