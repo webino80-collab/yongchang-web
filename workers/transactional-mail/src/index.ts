@@ -10,9 +10,20 @@ const MAX = { subject: 300, html: 400_000 } as const;
 
 interface Env {
   MAIL: SendEmail;
-  MAIL_WORKER_SECRET: string;
+  /** Supabase 등에서 MAIL_WORKER_KEY 로 통일한 경우 */
+  MAIL_WORKER_KEY?: string;
+  /** 기존 이름 (wrangler secret put MAIL_WORKER_SECRET) */
+  MAIL_WORKER_SECRET?: string;
   FROM_ADDR: string;
   FROM_NAME: string;
+}
+
+function workerBearerSecret(env: Env): string | undefined {
+  const k = env.MAIL_WORKER_KEY?.trim();
+  if (k) return k;
+  const s = env.MAIL_WORKER_SECRET?.trim();
+  if (s) return s;
+  return undefined;
 }
 
 interface OutgoingMessage {
@@ -57,12 +68,20 @@ export default {
       return json({ ok: false, error: "method_not_allowed" }, 405);
     }
 
-    if (!env.MAIL_WORKER_SECRET?.length) {
-      return json({ ok: false, error: "worker_misconfigured" }, 500);
+    const sharedSecret = workerBearerSecret(env);
+    if (!sharedSecret?.length) {
+      return json(
+        {
+          ok: false,
+          error: "worker_misconfigured",
+          hint: "Cloudflare Secret: MAIL_WORKER_KEY 또는 MAIL_WORKER_SECRET 중 하나 설정 (Supabase와 동일 값)",
+        },
+        500,
+      );
     }
 
     const token = bearer(request);
-    if (!token || token !== env.MAIL_WORKER_SECRET) {
+    if (!token || token !== sharedSecret) {
       return json({ ok: false, error: "unauthorized" }, 401);
     }
 
