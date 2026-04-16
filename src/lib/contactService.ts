@@ -1,6 +1,19 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
 import type { ContactInquiry } from "@/types";
 import type { Database } from "./database.types";
+
+async function messageFromFunctionsHttpError(err: FunctionsHttpError): Promise<string> {
+  try {
+    const body = await err.context.json();
+    const o = body as { error?: string; detail?: string };
+    const parts = [o.error, o.detail].filter(Boolean);
+    if (parts.length) return parts.join(" — ");
+  } catch {
+    /* ignore */
+  }
+  return err.message;
+}
 
 type CreatedContactRow = Database["public"]["Functions"]["create_contact_inquiry"]["Returns"];
 
@@ -86,8 +99,7 @@ export const contactService = {
       .eq("id", id);
     if (error) throw error;
 
-    // send-inquiry-reply 는 verify_jwt=true — 게이트웨이·함수 모두 Bearer 필요.
-    // 일부 환경에서 invoke 가 세션 헤더를 붙이지 않는 경우가 있어 access_token 을 명시합니다.
+    // send-inquiry-reply: 게이트웨이 verify_jwt off, 함수 내부에서 Bearer 검사. invoke 시 세션 토큰 명시.
     const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
     if (sessionErr || !accessToken) {
@@ -102,6 +114,9 @@ export const contactService = {
     });
     if (fnError) {
       console.error("send-inquiry-reply invoke:", fnError);
+      if (fnError instanceof FunctionsHttpError) {
+        throw new Error(await messageFromFunctionsHttpError(fnError));
+      }
       throw fnError;
     }
   },
