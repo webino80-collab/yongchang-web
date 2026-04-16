@@ -74,11 +74,13 @@ export function PostView({ post, comments, commentsLoading }: PostViewProps) {
         )}
       </div>
 
-      {/* 본문 */}
-      <div
-        className="prose prose-sm max-w-none py-6 min-h-32 text-gray-800 whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
+      {/* 본문 — 표·넓은 콘텐츠는 가로 스크롤로 뷰포트 밀어내지 않음 */}
+      <div className="max-w-full overflow-x-auto">
+        <div
+          className="prose prose-sm max-w-none py-6 min-h-32 min-w-0 text-gray-800 whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+      </div>
 
       {/* 첨부파일 */}
       {post.files && post.files.length > 0 && (

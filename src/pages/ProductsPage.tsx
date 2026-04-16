@@ -879,7 +879,7 @@ export function ProductDetailPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-[clamp(2rem,4vw,4rem)] pt-8 lg:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-[clamp(2rem,4vw,4rem)] pt-8 lg:grid-cols-2">
         <ProductGallery product={product} title={title ?? ""} />
 
         {/* 본문(우측): 제목·요약·특징·문의를 한 열에 두어 갤러리 행과 높이 맞춤 시 생기던 빈 공간을 없앰 */}
@@ -954,7 +954,7 @@ export function ProductDetailPage() {
               />
             ) : (
               <div
-                className="product-detail-html text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
+                className="product-detail-html max-w-full overflow-x-auto text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
                 style={{
                   fontSize: "1.45rem",
                   lineHeight: 1.75,
@@ -969,7 +969,7 @@ export function ProductDetailPage() {
         {/* 규격 표 */}
         {(showStandardSpecTable || showGccBlock) && (
           <div
-            className="col-span-1 w-full lg:col-span-2"
+            className="col-span-1 w-full min-w-0 lg:col-span-2"
             style={{ marginTop: "clamp(2.5rem, 5vw, 4rem)", paddingBottom: "clamp(2rem, 4vw, 3rem)" }}
           >
             {showGccBlock ? (
@@ -1010,7 +1010,14 @@ export function ProductDetailPage() {
                       >
                         {lang === "ko" ? tbl.title_ko : tbl.title_en || tbl.title_ko}
                       </h3>
-                      <div style={{ overflowX: "auto", borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX, overflow: "hidden" }}>
+                      <div
+                        style={{
+                          overflowX: "auto",
+                          WebkitOverflowScrolling: "touch",
+                          overscrollBehaviorX: "contain",
+                          borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX,
+                        }}
+                      >
                         <table
                           style={{
                             width: "100%",
@@ -1099,24 +1106,24 @@ export function ProductDetailPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <div
+              <div
+                style={{
+                  overflowX: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  overscrollBehaviorX: "contain",
+                  borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX,
+                }}
+              >
+                <table
                   style={{
                     width: "100%",
-                    borderRadius: PRODUCT_SPEC_TABLE_RADIUS_PX,
-                    overflow: "hidden",
+                    minWidth: specColumns.length >= 6 ? 640 : specColumns.length >= 4 ? 520 : 360,
+                    borderCollapse: "collapse",
+                    borderSpacing: 0,
+                    fontSize: "1.4rem",
+                    fontFamily: "inherit",
                   }}
                 >
-                  <table
-                    style={{
-                      width: "100%",
-                      minWidth: specColumns.length >= 6 ? 640 : specColumns.length >= 4 ? 520 : 360,
-                      borderCollapse: "collapse",
-                      borderSpacing: 0,
-                      fontSize: "1.4rem",
-                      fontFamily: "inherit",
-                    }}
-                  >
                     <thead>
                       <tr style={{ backgroundColor: "#333333", color: "#fff" }}>
                         {specColumns.map((col) => (
@@ -1191,7 +1198,6 @@ export function ProductDetailPage() {
                       })}
                     </tbody>
                   </table>
-                </div>
               </div>
             )}
           </div>
