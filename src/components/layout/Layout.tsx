@@ -83,8 +83,17 @@ export function Layout() {
         transition={{ duration: 0.4, ease: [0.2, 0.4, 0.9, 1] }}
         style={{
           position: "fixed",
-          top: 0, left: 0, right: 0,
+          top: 0,
+          left: 0,
+          right: 0,
           zIndex: 1002,
+          /* fixed인데 flex 자식이면 WebKit에서 헤더·드로어 높이만큼 문서가 또 늘어날 수 있음 — 레이아웃 높이 0 + 내용은 overflow로 표시 */
+          flex: "none",
+          alignSelf: "stretch",
+          width: "100%",
+          height: 0,
+          minHeight: 0,
+          overflow: "visible",
           backgroundColor: onHero ? "transparent" : "#fff",
           boxShadow: onHero ? "none" : scrolled ? "0 2px 16px rgba(0,0,129,0.08)" : "none",
           borderBottom: onHero ? "none" : scrolled ? "none" : "1px solid #e5e5e5",
