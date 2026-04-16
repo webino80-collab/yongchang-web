@@ -144,7 +144,7 @@ export default {
     msg.setRecipient(TO_ADDR);
     msg.setSubject(`[문의] ${subject} — ${name}`);
     msg.addMessage({
-      contentType: "text/plain; charset=UTF-8",
+      contentType: "text/plain",
       data: plain,
     });
 

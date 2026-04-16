@@ -54,8 +54,9 @@ async function sendOne(env: Env, m: OutgoingMessage): Promise<void> {
   msg.setSender({ name: env.FROM_NAME, addr: env.FROM_ADDR });
   msg.setRecipient(m.to.trim());
   msg.setSubject(m.subject);
+  // Cloudflare send_email: charset 접미사 없이 text/html 만 허용
   msg.addMessage({
-    contentType: "text/html; charset=UTF-8",
+    contentType: "text/html",
     data: m.html,
   });
   const raw = msg.asRaw();
