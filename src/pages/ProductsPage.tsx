@@ -992,7 +992,7 @@ export function ProductDetailPage() {
                     <Fragment key={ti}>
                       {ti > 0 ? (
                         <div
-                          className="hidden shrink-0 select-none items-center justify-center self-stretch pt-10 text-3xl font-light text-gray-400 lg:flex"
+                          className="flex shrink-0 select-none items-center justify-center py-5 text-3xl font-light text-gray-400 lg:self-stretch lg:py-0 lg:pt-10 lg:px-2"
                           aria-hidden
                         >
                           +
