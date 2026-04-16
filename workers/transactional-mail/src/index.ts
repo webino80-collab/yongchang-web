@@ -64,6 +64,16 @@ async function sendOne(env: Env, m: OutgoingMessage): Promise<void> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    /** Secret 설정 여부만 확인(값은 노출하지 않음). 브라우저에서 Worker URL 열어 확인 가능 */
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health")) {
+      return json({
+        ok: true,
+        service: "transactional-mail",
+        bearer_secret_configured: Boolean(workerBearerSecret(env)),
+      });
+    }
+
     if (request.method !== "POST") {
       return json({ ok: false, error: "method_not_allowed" }, 405);
     }
