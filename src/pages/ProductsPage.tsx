@@ -954,7 +954,7 @@ export function ProductDetailPage() {
               />
             ) : (
               <div
-                className="product-detail-html max-w-full overflow-x-auto text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
+                className="product-detail-html max-w-full min-w-0 overflow-x-auto text-center [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:h-auto [&_p]:mb-3 [&_ul]:mx-auto [&_ul]:inline-block [&_ul]:text-left [&_ul]:list-disc [&_ul]:pl-6"
                 style={{
                   fontSize: "1.45rem",
                   lineHeight: 1.75,
@@ -1011,6 +1011,7 @@ export function ProductDetailPage() {
                         {lang === "ko" ? tbl.title_ko : tbl.title_en || tbl.title_ko}
                       </h3>
                       <div
+                        className="max-w-full min-w-0"
                         style={{
                           overflowX: "auto",
                           WebkitOverflowScrolling: "touch",
@@ -1107,6 +1108,7 @@ export function ProductDetailPage() {
               </div>
             ) : (
               <div
+                className="max-w-full min-w-0"
                 style={{
                   overflowX: "auto",
                   WebkitOverflowScrolling: "touch",
