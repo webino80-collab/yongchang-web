@@ -831,7 +831,7 @@ export function ProductDetailPage() {
   const tagline = lang === "ko" ? taglineKo : taglineEn;
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
+    <div className="min-h-0 bg-white">
       {/* 헤더·갤러리·표가 동일한 좌우 inset(패딩)을 쓰도록 한 컨테이너로 통일 */}
       <div className="mx-auto w-full max-w-[1200px] px-5 pb-24 pt-12 md:px-12">
         <div
@@ -998,7 +998,7 @@ export function ProductDetailPage() {
                           +
                         </div>
                       ) : null}
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="min-w-0 w-full lg:flex-1">
                       <h3
                         style={{
                           fontSize: "1.6rem",

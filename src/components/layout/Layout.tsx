@@ -65,7 +65,7 @@ export function Layout() {
   const onHero = isHome && !scrolled;
 
   return (
-    <div className="flex min-h-screen min-h-dvh flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
 
       {/* 헤더 높이만큼 placeholder — 홈은 히어로가 헤더 아래까지 올라가므로 생략 */}
       {!isHome && (
@@ -438,10 +438,12 @@ export function Layout() {
         </AnimatePresence>
       </motion.header>
 
-      {/* 본문 — 홈 히어로 풀뷰 시 가로·상하 여백 없음 */}
-      <main className={clsx("flex-1 w-full min-w-0", isHome && "p-0 m-0")}>
+      <main className={clsx("w-full min-w-0 shrink-0", isHome && "p-0 m-0")}>
         <Outlet />
       </main>
+
+      {/* 짧은 페이지: 푸터를 하단에 붙이기 위한 flex 여유 구간 (본문 flex-1로 두면 푸터 아래 빈 스크롤이 생길 수 있음) */}
+      <div className="min-h-0 min-w-0 flex-1 basis-0" aria-hidden />
 
       {/* ⑤ 푸터 — logo marginRight 15rem, 사명 fontSize 3rem */}
       <footer style={{ backgroundColor: "#222", position: "relative", zIndex: 1000 }}>
