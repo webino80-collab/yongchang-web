@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,17 +43,30 @@ export function Layout() {
     [productNavCategories, lang]
   );
 
-  /* 스크롤 방향 감지 */
+  function readScrollY() {
+    if (typeof window === "undefined") return 0;
+    return (
+      window.scrollY ||
+      window.pageYOffset ||
+      document.documentElement.scrollTop ||
+      document.scrollingElement?.scrollTop ||
+      document.body.scrollTop ||
+      0
+    );
+  }
+
+  /* 스크롤 방향·히어로 투명 헤더 여부 */
   useEffect(() => {
     const onScroll = () => {
-      const curr = window.scrollY;
-      setScrolled(curr > 40);
+      const curr = readScrollY();
+      setScrolled(curr > 8);
       setHidden(curr > prevScrollY.current && curr > HEADER_H_PC);
       prevScrollY.current = curr;
     };
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [location.pathname]);
 
   /* 경로 변경 시 메뉴 닫기 */
   useEffect(() => {
@@ -61,8 +75,8 @@ export function Layout() {
   }, [location.pathname]);
 
   const isHome = location.pathname === "/";
-  /** 홈 최상단: 히어로 풀스크린 위 투명 헤더 + 흰색 GNB */
-  const onHero = isHome && !scrolled;
+  /** 홈 최상단 + 메뉴 닫힘일 때만 투명 — 그 외·스크롤 후에는 흰 배경으로 본문과 겹침 방지 */
+  const onHero = isHome && !scrolled && !mobileOpen;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip">
@@ -75,30 +89,23 @@ export function Layout() {
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════════
-          ② motion.header — Framer Motion 슬라이드 (CSS transform 제거)
-      ════════════════════════════════════════════════════════ */}
-      <motion.header
-        animate={{ y: hidden ? "-100%" : "0%" }}
-        transition={{ duration: 0.4, ease: [0.2, 0.4, 0.9, 1] }}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1002,
-          /* fixed인데 flex 자식이면 WebKit에서 헤더·드로어 높이만큼 문서가 또 늘어날 수 있음 — 레이아웃 높이 0 + 내용은 overflow로 표시 */
-          flex: "none",
-          alignSelf: "stretch",
-          width: "100%",
-          height: 0,
-          minHeight: 0,
-          overflow: "visible",
-          backgroundColor: onHero ? "transparent" : "#fff",
-          boxShadow: onHero ? "none" : scrolled ? "0 2px 16px rgba(0,0,129,0.08)" : "none",
-          borderBottom: onHero ? "none" : scrolled ? "none" : "1px solid #e5e5e5",
-        }}
-      >
+      {/* 헤더는 body로 포털 — flex 컬럼 자식이 되면 Chrome 등에서 문서 높이가 부풀 수 있음 */}
+      {createPortal(
+        <motion.header
+          className={clsx(onHero ? "bg-transparent" : "bg-white")}
+          animate={{ y: hidden ? "-100%" : "0%" }}
+          transition={{ duration: 0.4, ease: [0.2, 0.4, 0.9, 1] }}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1002,
+            backgroundColor: onHero ? "transparent" : "#ffffff",
+            boxShadow: onHero ? "none" : scrolled ? "0 2px 16px rgba(0,0,129,0.08)" : "none",
+            borderBottom: onHero ? "none" : scrolled ? "none" : "1px solid #e5e5e5",
+          }}
+        >
 
         {/* ══════════════════════════════
             PC 헤더
@@ -445,7 +452,9 @@ export function Layout() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.header>
+        </motion.header>,
+        document.body
+      )}
 
       <main className={clsx("w-full min-w-0 shrink-0", isHome && "p-0 m-0")}>
         <Outlet />
