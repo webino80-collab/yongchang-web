@@ -103,8 +103,7 @@ export function specColumnsForSubtype(subtype: string | null | undefined): SpecC
         { field: "gauge", header: "Gauge", kind: "text" },
         { field: "color_hex", header: "Color", kind: "color" },
         { field: "length", header: "Length", kind: "text" },
-        { field: "wall_type", header: "Type", kind: "type" },
-        { field: "measurement", header: "Size (ø etc.)", kind: "text" },
+        { field: "measurement", header: "I.D. / ETW ±0.01", kind: "text" },
       ];
     case "gclp":
       return [
@@ -133,8 +132,6 @@ export function specColumnsForSubtype(subtype: string | null | undefined): SpecC
         { field: "model", header: "Model", kind: "text" },
         { field: "color_hex", header: "Color", kind: "color" },
         { field: "length", header: "Length", kind: "text" },
-        { field: "wall_type", header: "Type", kind: "type" },
-        { field: "measurement", header: "Size (ø etc.)", kind: "text" },
       ];
     case "cl":
       return [

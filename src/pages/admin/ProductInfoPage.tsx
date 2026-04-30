@@ -13,6 +13,8 @@ import {
 import { productCategoryService, headlineForSlug, staticFallbackProductCategories } from "@/lib/productCategoryService";
 import { normalizeSpecSubtype } from "@/lib/productSpecLayouts";
 import { PageSpinner } from "@/components/ui/Spinner";
+import { useAuth } from "@/hooks/useAuth";
+import { isLevel5ContentAdmin } from "@/lib/adminAccess";
 import type { Product } from "@/types";
 import { emptySpecRow, fileLabelFromUrl } from "@/pages/admin/productAdminConstants";
 import { ProductSpecSection, type ProductForm } from "@/components/admin/ProductSpecSection";
@@ -52,7 +54,7 @@ function saveFailureHint(detail: string): string | null {
   return null;
 }
 
-const FE0: [string, string, string, string, string] = ["", "", "", "", ""];
+const FE0: [string, string, string, string, string, string] = ["", "", "", "", "", ""];
 
 const EMPTY_FORM: ProductForm = {
   title_ko: "",
@@ -136,6 +138,7 @@ type DetailLang = "ko" | "en";
 
 export function ProductInfoPage() {
   const queryClient = useQueryClient();
+  const { profile, profileLoading } = useAuth();
   const slotFileRef = useRef<HTMLInputElement>(null);
   const pendingSlotIndex = useRef<number>(0);
   const detailImageInputRef = useRef<HTMLInputElement>(null);
@@ -373,6 +376,7 @@ export function ProductInfoPage() {
   const saveErrorText =
     create.isError || update.isError ? formatSupabaseError(create.error ?? update.error) : "";
   const saveErrorHint = saveErrorText ? saveFailureHint(saveErrorText) : null;
+  const canEditSpecInfo = !profileLoading && !isLevel5ContentAdmin(profile);
   if (isLoading && !products.length) return <PageSpinner />;
 
   return (
@@ -586,9 +590,9 @@ export function ProductInfoPage() {
                 </div>
               </div>
 
-              <p className="text-sm font-medium text-gray-800 mb-2">특징 #1 ~ #5</p>
+              <p className="text-sm font-medium text-gray-800 mb-2">특징 #1 ~ #6</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[0, 1, 2, 3, 4].map((i) => (
+                {[0, 1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="rounded border border-gray-100 p-3 bg-gray-50/30">
                     <label className="text-xs font-medium text-gray-600">특징 #{i + 1}</label>
                     <input
@@ -708,17 +712,19 @@ export function ProductInfoPage() {
               </div>
           </FormSection>
 
-          <FormSection title="규격 정보">
-            <ProductSpecSection
-              form={form}
-              setForm={setForm}
-              specSelected={specSelected}
-              toggleSpecRow={toggleSpecRow}
-              addSpecRows={addSpecRows}
-              deleteSelectedSpecRows={deleteSelectedSpecRows}
-              updateSpecRow={updateSpecRow}
-            />
-          </FormSection>
+          {canEditSpecInfo && (
+            <FormSection title="규격 정보">
+              <ProductSpecSection
+                form={form}
+                setForm={setForm}
+                specSelected={specSelected}
+                toggleSpecRow={toggleSpecRow}
+                addSpecRows={addSpecRows}
+                deleteSelectedSpecRows={deleteSelectedSpecRows}
+                updateSpecRow={updateSpecRow}
+              />
+            </FormSection>
+          )}
 
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" className="btn btn-secondary btn-sm" onClick={resetForm}>

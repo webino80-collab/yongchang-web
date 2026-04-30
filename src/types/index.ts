@@ -198,7 +198,7 @@ export interface Product {
   subtitle_en: string | null;
   summary_ko: string | null;
   summary_en: string | null;
-  /** 특징 5줄 (운영 폼과 동일, 길이 5 권장) */
+  /** 특징 6줄 (운영 폼과 동일, 길이 6 권장) */
   features_ko: string[];
   features_en: string[];
   /** 제품 문의 아래·스펙 위 상세 (관리자 상세이미지는 단일 이미지용 HTML로 저장) */
@@ -221,6 +221,22 @@ export interface ProductCategory {
   label_en: string;
   sort_order: number;
   is_active: boolean;
+  updated_at: string;
+}
+
+export interface AssetRenewal {
+  id: string;
+  asset_type: "hosting" | "ssl";
+  asset_name: string;
+  provider: string | null;
+  target: string | null;
+  expires_at: string; // YYYY-MM-DD
+  notify_days_before: number;
+  notify_email: string;
+  last_notified_at: string | null;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
   updated_at: string;
 }
 

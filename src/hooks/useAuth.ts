@@ -65,61 +65,61 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }));
 
+let authListenerInitialized = false;
+
+function initializeAuthListenerOnce() {
+  if (authListenerInitialized) return;
+  authListenerInitialized = true;
+
+  // onAuthStateChange가 아예 안 오는 비정상 케이스만 대비 (INITIAL_SESSION은 보통 즉시 옴)
+  const fallback = setTimeout(() => {
+    if (useAuthStore.getState().loading) {
+      console.warn("[useAuth] 세션 이벤트 지연 — 로딩 강제 종료");
+      useAuthStore.getState().setLoading(false);
+    }
+  }, 20_000);
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log("[useAuth] auth event:", event, "user:", session?.user?.email ?? "없음");
+
+    useAuthStore.getState().setSession(session);
+    useAuthStore.getState().setUser(session?.user ?? null);
+
+    if (!session?.user) {
+      useAuthStore.getState().setProfile(null);
+      useAuthStore.setState({ profileLoading: false });
+      clearTimeout(fallback);
+      useAuthStore.getState().setLoading(false);
+      return;
+    }
+
+    clearTimeout(fallback);
+    useAuthStore.getState().setLoading(false);
+
+    // 관리자 페이지의 레벨 분기(예: level 5)는 profile.level을 사용하므로
+    // JWT 관리자 여부와 관계없이 profile 조회가 끝날 때까지 대기한다.
+    useAuthStore.setState({ profileLoading: true });
+
+    void (async () => {
+      try {
+        const profile = await authService.getProfile(session.user.id);
+        console.log("[useAuth] profile:", profile);
+        useAuthStore.getState().setProfile(profile);
+      } catch (err) {
+        console.error("[useAuth] getProfile 실패:", err);
+        useAuthStore.getState().setProfile(null);
+      } finally {
+        useAuthStore.setState({ profileLoading: false });
+      }
+    })();
+  });
+}
+
 export function useAuth() {
   const store = useAuthStore();
 
   useEffect(() => {
-    // onAuthStateChange가 아예 안 오는 비정상 케이스만 대비 (INITIAL_SESSION은 보통 즉시 옴)
-    const fallback = setTimeout(() => {
-      if (useAuthStore.getState().loading) {
-        console.warn("[useAuth] 세션 이벤트 지연 — 로딩 강제 종료");
-        useAuthStore.getState().setLoading(false);
-      }
-    }, 20_000);
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("[useAuth] auth event:", event, "user:", session?.user?.email ?? "없음");
-
-        useAuthStore.getState().setSession(session);
-        useAuthStore.getState().setUser(session?.user ?? null);
-
-        if (!session?.user) {
-          useAuthStore.getState().setProfile(null);
-          useAuthStore.setState({ profileLoading: false });
-          clearTimeout(fallback);
-          useAuthStore.getState().setLoading(false);
-          return;
-        }
-
-        const metaAdmin = session.user.app_metadata?.is_admin === true;
-        clearTimeout(fallback);
-        useAuthStore.getState().setLoading(false);
-
-        // JWT에 관리자 플래그가 있으면 프로필 대기 없이 진입 (닉네임 등은 백그라운드 로드)
-        if (!metaAdmin) {
-          useAuthStore.setState({ profileLoading: true });
-        }
-
-        void (async () => {
-          try {
-            const profile = await authService.getProfile(session.user.id);
-            console.log("[useAuth] profile:", profile);
-            useAuthStore.getState().setProfile(profile);
-          } catch (err) {
-            console.error("[useAuth] getProfile 실패:", err);
-            useAuthStore.getState().setProfile(null);
-          } finally {
-            useAuthStore.setState({ profileLoading: false });
-          }
-        })();
-      }
-    );
-
-    return () => {
-      clearTimeout(fallback);
-      listener.subscription.unsubscribe();
-    };
+    initializeAuthListenerOnce();
   }, []);
 
   return store;

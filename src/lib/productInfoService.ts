@@ -49,9 +49,9 @@ export function slots5ToLegacy(slots: [string, string, string, string, string]) 
 }
 
 export function normalizeFeaturesTuple(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return ["", "", "", "", ""];
+  if (!Array.isArray(raw)) return ["", "", "", "", "", ""];
   const a = raw.map((x) => String(x ?? ""));
-  return [0, 1, 2, 3, 4].map((i) => a[i] ?? "");
+  return [0, 1, 2, 3, 4, 5].map((i) => a[i] ?? "");
 }
 
 function escapeHtmlAttr(s: string): string {

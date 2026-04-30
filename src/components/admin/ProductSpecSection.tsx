@@ -1,6 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from "react";
 import type { GccPlusSpecRow, GccPlusSpecTable, Product, ProductSpecRow } from "@/types";
-import { SPEC_TYPE_OPTIONS } from "@/pages/admin/productAdminConstants";
 import {
   SPEC_SUBTYPE_OPTIONS,
   defaultGccPlusTables,
@@ -62,6 +61,13 @@ export function ProductSpecSection({
   const st = form.spec_subtype ?? "gcl";
   const isGccPlus = st === "gcc_plus";
   const columns = specColumnsForSubtype(st);
+  const visibleColumns = columns
+    .filter((col) => col.kind !== "type")
+    .map((col) =>
+      col.field === "measurement" && st === "gcli"
+        ? { ...col, header: "I.D. / ETW ±0.01" }
+        : col
+    );
 
   const gccTables: GccPlusSpecTable[] =
     form.spec_gcc_plus_tables?.length ? form.spec_gcc_plus_tables : defaultGccPlusTables();
@@ -281,7 +287,7 @@ export function ProductSpecSection({
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table
               className={`w-full text-sm ${
-                columns.length >= 6 ? "min-w-[920px]" : columns.length >= 4 ? "min-w-[720px]" : "min-w-[520px]"
+                visibleColumns.length >= 6 ? "min-w-[920px]" : visibleColumns.length >= 4 ? "min-w-[720px]" : "min-w-[520px]"
               }`}
             >
               <thead className="bg-gray-100 text-slate-700">
@@ -289,7 +295,7 @@ export function ProductSpecSection({
                   <th className="px-2 py-2 w-10 text-center">
                     <span className="sr-only">선택</span>
                   </th>
-                  {columns.map((col) => (
+                  {visibleColumns.map((col) => (
                     <th key={col.field} className="px-2 py-2 text-left font-bold">
                       {col.header}
                     </th>
@@ -307,29 +313,13 @@ export function ProductSpecSection({
                         aria-label={`행 ${i + 1} 선택`}
                       />
                     </td>
-                    {columns.map((col) => (
+                    {visibleColumns.map((col) => (
                       <td key={col.field} className="px-2 py-2">
                         {col.kind === "color" ? (
                           <ColorInputs
                             value={specCellValue(row, col.field)}
                             onChange={(hex) => updateSpecRow(i, { [col.field]: hex } as Partial<ProductSpecRow>)}
                           />
-                        ) : col.kind === "type" ? (
-                          <select
-                            className="input w-full text-xs py-1"
-                            value={specCellValue(row, col.field)}
-                            onChange={(e) => updateSpecRow(i, { [col.field]: e.target.value } as Partial<ProductSpecRow>)}
-                          >
-                            {specCellValue(row, col.field) &&
-                            !(SPEC_TYPE_OPTIONS as readonly string[]).includes(specCellValue(row, col.field)) ? (
-                              <option value={specCellValue(row, col.field)}>{specCellValue(row, col.field)}</option>
-                            ) : null}
-                            {SPEC_TYPE_OPTIONS.map((w) => (
-                              <option key={w} value={w}>
-                                {w}
-                              </option>
-                            ))}
-                          </select>
                         ) : (
                           <input
                             className="input w-full text-xs py-1"
