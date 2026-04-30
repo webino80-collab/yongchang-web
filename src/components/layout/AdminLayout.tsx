@@ -7,8 +7,6 @@ import { authService } from "@/lib/authService";
 import {
   isLevel5ContentAdmin,
   isLevel5AdminPathAllowed,
-  isSuperAdmin,
-  isSuperAdminOnlyPath,
   LEVEL5_ADMIN_DEFAULT_PATH,
   LEVEL5_ADMIN_NAV_PATHS,
 } from "@/lib/adminAccess";
@@ -33,14 +31,10 @@ const navItems = [
   { to: "/admin/members",      label: "회원 관리",       icon: "👥" },
   { to: "/admin/posts",        label: "게시글 관리",     icon: "📝" },
   { to: "/admin/inquiries",    label: "문의 관리",       icon: "💬" },
-  { to: "/admin/renewal-alerts", label: "갱신 알림 관리", icon: "⏰" },
 ];
 
 function navItemsForProfile(profile: ReturnType<typeof useAuth>["profile"]) {
-  const superAdmin = isSuperAdmin(profile);
-  if (!isLevel5ContentAdmin(profile)) {
-    return navItems.filter((item) => (item.to === "/admin/renewal-alerts" ? superAdmin : true));
-  }
+  if (!isLevel5ContentAdmin(profile)) return navItems;
   const allowed = new Set<string>(LEVEL5_ADMIN_NAV_PATHS);
   return navItems
     .filter((item) => allowed.has(item.to))
@@ -53,7 +47,6 @@ export function AdminLayout() {
   const navigate = useNavigate();
 
   const level5Content = isLevel5ContentAdmin(profile);
-  const superAdmin = isSuperAdmin(profile);
 
   /** 레벨 5: 탭/창을 닫을 때 등 pagehide 시 세션 종료(SPA 내 /admin 전환에는 발생하지 않음). 새로고침 시에도 호출될 수 있음 */
   useEffect(() => {
@@ -84,8 +77,6 @@ export function AdminLayout() {
   const mainContent =
     level5Content && !isLevel5AdminPathAllowed(location.pathname) ? (
       <Navigate to={LEVEL5_ADMIN_DEFAULT_PATH} replace />
-    ) : isSuperAdminOnlyPath(location.pathname) && !superAdmin ? (
-      <Navigate to="/admin" replace />
     ) : (
       <Outlet />
     );

@@ -637,53 +637,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      asset_renewals: {
-        Row: {
-          id: string;
-          asset_type: string;
-          asset_name: string;
-          provider: string | null;
-          target: string | null;
-          expires_at: string;
-          notify_days_before: number;
-          notify_email: string;
-          last_notified_at: string | null;
-          is_active: boolean;
-          notes: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          asset_type: string;
-          asset_name: string;
-          provider?: string | null;
-          target?: string | null;
-          expires_at: string;
-          notify_days_before?: number;
-          notify_email?: string;
-          last_notified_at?: string | null;
-          is_active?: boolean;
-          notes?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          asset_type?: string;
-          asset_name?: string;
-          provider?: string | null;
-          target?: string | null;
-          expires_at?: string;
-          notify_days_before?: number;
-          notify_email?: string;
-          last_notified_at?: string | null;
-          is_active?: boolean;
-          notes?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
     };
     Views: Record<string, never>;
     Functions: {

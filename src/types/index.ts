@@ -224,22 +224,6 @@ export interface ProductCategory {
   updated_at: string;
 }
 
-export interface AssetRenewal {
-  id: string;
-  asset_type: "hosting" | "ssl";
-  asset_name: string;
-  provider: string | null;
-  target: string | null;
-  expires_at: string; // YYYY-MM-DD
-  notify_days_before: number;
-  notify_email: string;
-  last_notified_at: string | null;
-  is_active: boolean;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Certificate {
   id: string;
   title_ko: string;

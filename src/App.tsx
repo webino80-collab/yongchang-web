@@ -31,7 +31,6 @@ import { CreateOperatorPage } from "@/pages/admin/CreateOperatorPage";
 import { PostsPage } from "@/pages/admin/PostsPage";
 import { InquiriesPage } from "@/pages/admin/InquiriesPage";
 import { AboutTimelineAdminPage } from "@/pages/admin/AboutTimelineAdminPage";
-import { RenewalAlertsAdminPage } from "@/pages/admin/RenewalAlertsAdminPage";
 
 export default function App() {
   return (
@@ -76,7 +75,6 @@ export default function App() {
         <Route path="members" element={<MembersPage />} />
         <Route path="posts" element={<PostsPage />} />
         <Route path="inquiries" element={<InquiriesPage />} />
-        <Route path="renewal-alerts" element={<RenewalAlertsAdminPage />} />
       </Route>
 
       {/* 404 */}
