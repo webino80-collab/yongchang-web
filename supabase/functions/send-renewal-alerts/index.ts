@@ -12,6 +12,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getMailWorkerBearerToken, getMailWorkerUrl } from "../_shared/mail_worker_env.ts";
 
+const cors: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
+
 type AssetRenewalRow = {
   id: string;
   asset_type: "hosting" | "ssl";
@@ -41,8 +48,12 @@ function diffDays(a: Date, b: Date): number {
 }
 
 serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: cors });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405, headers: cors });
   }
 
   try {
@@ -55,7 +66,7 @@ serve(async (req: Request) => {
 
     if (!mailWorkerUrl || !mailWorkerSecret) {
       console.error("MAIL_WORKER_URL or MAIL_WORKER_KEY (or MAIL_WORKER_SECRET) not set");
-      return new Response("Mail config missing", { status: 500 });
+      return new Response("Mail config missing", { status: 500, headers: cors });
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -84,7 +95,7 @@ serve(async (req: Request) => {
     if (due.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0, scanned: rows.length }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -140,11 +151,11 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ ok: true, sent: due.length, scanned: rows.length }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("send-renewal-alerts error:", err);
-    return new Response("Internal Server Error", { status: 500 });
+    return new Response("Internal Server Error", { status: 500, headers: cors });
   }
 });
 
