@@ -585,150 +585,136 @@ function ProductGallery({ product, title }: { product: Product; title: string })
   }
 
   return (
-    <div
-      style={{
-        position: "relative",
-        borderRadius: "1.2rem",
-        overflow: "hidden",
-        backgroundColor: "#fff",
-        aspectRatio: "1",
-      }}
-    >
-      <div style={{ position: "absolute", inset: 0 }}>
-        {current ? (
-          <img src={current} alt={title ?? ""} style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center" }} />
-        ) : (
-          <DefaultProductImage category={product.category} title={title ?? ""} />
-        )}
+    <div className="min-w-0">
+      <div
+        style={{
+          position: "relative",
+          borderRadius: "1.2rem",
+          overflow: "hidden",
+          backgroundColor: "#fff",
+          aspectRatio: "1",
+        }}
+      >
+        <div style={{ position: "absolute", inset: 0 }}>
+          {current ? (
+            <img src={current} alt={title ?? ""} style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center" }} />
+          ) : (
+            <DefaultProductImage category={product.category} title={title ?? ""} />
+          )}
+        </div>
       </div>
 
       {n > 1 && (
         <div
           style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: "0.65rem 0.5rem",
+            marginTop: "0.8rem",
+            padding: "0 0.25rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "0.5rem",
-            background: "transparent",
-            pointerEvents: "none",
           }}
         >
-          <div
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="이전 이미지"
+            className="hover:opacity-80"
             style={{
+              flexShrink: 0,
+              width: 40,
+              height: 40,
+              padding: 0,
+              border: "none",
+              borderRadius: 8,
+              background: "transparent",
+              cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "0.5rem",
-              maxWidth: "100%",
-              pointerEvents: "auto",
+              color: "#9ca3a3",
             }}
           >
-            <button
-              type="button"
-              onClick={goPrev}
-              aria-label="이전 이미지"
-              className="hover:opacity-80"
-              style={{
-                flexShrink: 0,
-                width: 40,
-                height: 40,
-                padding: 0,
-                border: "none",
-                borderRadius: 8,
-                background: "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#9ca3a3",
-              }}
-            >
-              <GalleryChevron dir="prev" />
-            </button>
+            <GalleryChevron dir="prev" />
+          </button>
 
-            <div
-              role="tablist"
-              aria-label="갤러리 썸네일"
-              style={{
-                display: "flex",
-                flexWrap: "nowrap",
-                gap: "0.45rem",
-                overflowX: "auto",
-                flex: 1,
-                minWidth: 0,
-                paddingBottom: 2,
-                scrollbarWidth: "thin",
-              }}
-            >
-              {images.map((url, i) => {
-                const selected = i === idx;
-                return (
-                  <button
-                    key={`${i}-${url}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    onClick={() => setActiveIdx(i)}
-                    className="transition-opacity duration-200"
+          <div
+            role="tablist"
+            aria-label="갤러리 썸네일"
+            style={{
+              display: "flex",
+              flexWrap: "nowrap",
+              gap: "0.45rem",
+              overflowX: "auto",
+              flex: 1,
+              minWidth: 0,
+              paddingBottom: 2,
+              scrollbarWidth: "thin",
+            }}
+          >
+            {images.map((url, i) => {
+              const selected = i === idx;
+              return (
+                <button
+                  key={`${i}-${url}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveIdx(i)}
+                  className="transition-opacity duration-200"
+                  style={{
+                    position: "relative",
+                    flexShrink: 0,
+                    width: 56,
+                    height: 56,
+                    padding: 0,
+                    borderRadius: 10,
+                    border: selected ? "1px solid #ddd" : "1px solid transparent",
+                    boxSizing: "border-box",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    background: "transparent",
+                    opacity: selected ? 1 : 0.5,
+                  }}
+                >
+                  <img
+                    src={url}
+                    alt=""
                     style={{
-                      position: "relative",
-                      flexShrink: 0,
-                      width: 56,
-                      height: 56,
-                      padding: 0,
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
                       borderRadius: 10,
-                      border: selected ? "1px solid #ddd" : "1px solid transparent",
-                      boxSizing: "border-box",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      background: "transparent",
-                      opacity: selected ? 1 : 0.5,
+                      display: "block",
                     }}
-                  >
-                    <img
-                      src={url}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: 10,
-                        display: "block",
-                      }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="다음 이미지"
-              className="hover:opacity-80"
-              style={{
-                flexShrink: 0,
-                width: 40,
-                height: 40,
-                padding: 0,
-                border: "none",
-                borderRadius: 8,
-                background: "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#9ca3a3",
-              }}
-            >
-              <GalleryChevron dir="next" />
-            </button>
+                  />
+                </button>
+              );
+            })}
           </div>
+
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="다음 이미지"
+            className="hover:opacity-80"
+            style={{
+              flexShrink: 0,
+              width: 40,
+              height: 40,
+              padding: 0,
+              border: "none",
+              borderRadius: 8,
+              background: "transparent",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#9ca3a3",
+            }}
+          >
+            <GalleryChevron dir="next" />
+          </button>
         </div>
       )}
     </div>
